@@ -92,9 +92,9 @@ This project demonstrates modern software development using AI tools:
 
 ### How We Built This Together
 
-1. **Started Simple**: "Let's make a jumping game!"
-2. **Asked AI for Help**: Used AI to write the basic game code
-3. **Tested and Improved**: Played the game, found bugs, asked AI to fix them
+1. **Started Simple**: "Let's make a Geometry Dash game!"
+2. **Asked AI for Help**: Used AI to write the initial game code
+3. **Tested and Improved**: Played the game, found bugs, asked AI to help identify cause and fix them
 4. **Added Features Step by Step**:
    - ✅ Basic jumping and gravity
    - ✅ Red spike obstacles  
