@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash Clone</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+            background-color: #f0f0f0;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game constants
+        const PLAYER_SIZE = 30;
+        const GRAVITY = 0.8;
+        const JUMP_FORCE = -15;
+        const MOVE_SPEED = 5;
+        const GROUND_HEIGHT = canvas.height - 50;
+
+        // Player object
+        let player = {
+            x: 100,
+            y: GROUND_HEIGHT - PLAYER_SIZE,
+            width: PLAYER_SIZE,
+            height: PLAYER_SIZE,
+            velocityY: 0,
+            isJumping: false
+        };
+
+        // Obstacles and stairs - completely clean start
+        let obstacles = [];
+
+        // Stairs system - clean start, obstacles generated dynamically
+        let stairs = [];
+
+        let gameOver = false;
+        let score = 0;
+        let autoReplay = false;
+        let isPaused = false;
+        let gameOverTimer = 0;
+        const AUTO_REPLAY_DELAY = 1000; // 1 second delay before auto restart
+
+        // Make canvas focusable
+        canvas.tabIndex = 0;
+        canvas.focus();
+        canvas.addEventListener('click', () => canvas.focus());
+
+        // Handle input
+        document.addEventListener('keydown', (e) => {
+            console.log('Key pressed:', e.code);
+            
+            // Jump controls (only when game is running)
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && !player.isJumping && !gameOver && !isPaused) {
+                player.velocityY = JUMP_FORCE;
+                player.isJumping = true;
+                console.log('Jump triggered!');
+            }
+            
+            // Toggle auto replay
+            if (e.code === 'KeyR') {
+                autoReplay = !autoReplay;
+                console.log('Auto replay:', autoReplay ? 'ON' : 'OFF');
+            }
+            
+            // Toggle pause
+            if (e.code === 'KeyP') {
+                isPaused = !isPaused;
+                console.log('Game', isPaused ? 'PAUSED' : 'UNPAUSED');
+            }
+        });
+
+        // Game restart function
+        function restartGame() {
+            player = {
+                x: 100,
+                y: GROUND_HEIGHT - PLAYER_SIZE,
+                width: PLAYER_SIZE,
+                height: PLAYER_SIZE,
+                velocityY: 0,
+                isJumping: false
+            };
+            obstacles = [];
+            stairs = [];
+            score = 0;
+            gameOver = false;
+            gameOverTimer = 0;
+            console.log('Game restarted!');
+        }
+
+        // Enhanced collision detection for stairs
+        function checkCollision(player, obstacle) {
+            return player.x < obstacle.x + obstacle.width &&
+                   player.x + player.width > obstacle.x &&
+                   player.y < obstacle.y + obstacle.height &&
+                   player.y + player.height > obstacle.y;
+        }
+
+        // Check if player can land on a stair (landing from above)
+        function checkStairLanding(player, stair) {
+            return player.x < stair.x + stair.width &&
+                   player.x + player.width > stair.x &&
+                   player.y + player.height >= stair.y &&
+                   player.y + player.height <= stair.y + 15 && // Landing tolerance
+                   player.velocityY > 0; // Falling down
+        }
+
+        // Check if player hits stair from the side (should end game)
+        function checkStairSideCollision(player, stair) {
+            const collision = checkCollision(player, stair);
+            const landing = checkStairLanding(player, stair);
+            return collision && !landing; // Collision but not a valid landing
+        }
+
+        // Check if player should tumble down stairs
+        function checkStairTumble(player, stair) {
+            return player.x < stair.x + stair.width &&
+                   player.x + player.width > stair.x &&
+                   player.y + player.height > stair.y + stair.height - 10 && // On top of stair
+                   player.velocityY >= 0;
+        }
+
+        // Game loop
+        function update() {
+            // Skip update if paused
+            if (isPaused) return;
+            
+            if (gameOver) {
+                // Handle auto replay
+                if (autoReplay) {
+                    gameOverTimer += 16; // Approximate 60fps frame time
+                    if (gameOverTimer >= AUTO_REPLAY_DELAY) {
+                        restartGame();
+                    }
+                }
+                return;
+            }
+
+            console.log('Update running, player.y:', player.y);
+
+            // Apply gravity
+            player.velocityY += GRAVITY;
+            player.y += player.velocityY;
+
+            // Ground collision
+            if (player.y > GROUND_HEIGHT - player.height) {
+                player.y = GROUND_HEIGHT - player.height;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+
+            // Move obstacles and stairs
+            obstacles.forEach(obstacle => {
+                obstacle.x -= MOVE_SPEED;
+            });
+            stairs.forEach(stair => {
+                stair.x -= MOVE_SPEED;
+            });
+
+            // Check stair landings and physics
+            let onStair = false;
+            stairs.forEach(stair => {
+                if (checkStairLanding(player, stair)) {
+                    player.y = stair.y - player.height;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                    onStair = true;
+                }
+            });
+
+            // If not on a stair, check for tumbling down
+            if (!onStair) {
+                stairs.forEach(stair => {
+                    if (checkStairTumble(player, stair)) {
+                        // Apply downward force for tumbling effect
+                        player.velocityY += GRAVITY * 0.5;
+                    }
+                });
+            }
+
+            // Remove off-screen obstacles and stairs, add new ones
+            obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+            stairs = stairs.filter(stair => stair.x + stair.width > 0);
+            
+            // Start generating obstacles after player has had some time to get comfortable
+            if (obstacles.length === 0 && stairs.length === 0 && score > 50) {
+                // Add first obstacle after score reaches 50
+                obstacles.push({
+                    x: canvas.width + 100,
+                    y: GROUND_HEIGHT - 20,
+                    width: 20,
+                    height: 20,
+                    type: 'spike'
+                });
+            } else if ((obstacles.length > 0 || stairs.length > 0) && 
+                       Math.max(
+                           obstacles.length > 0 ? obstacles[obstacles.length - 1].x : 0,
+                           stairs.length > 0 ? stairs[stairs.length - 1].x : 0
+                       ) < canvas.width - 200) {
+                // Continue normal generation pattern
+                if (Math.random() < 0.4) {
+                    // Add stair
+                    const stairHeight = 30 + Math.random() * 40;
+                    stairs.push({
+                        x: canvas.width + Math.random() * 200 + 200,
+                        y: GROUND_HEIGHT - stairHeight,
+                        width: 40 + Math.random() * 40,
+                        height: stairHeight,
+                        type: 'stair'
+                    });
+                } else {
+                    // Add spike
+                    obstacles.push({
+                        x: canvas.width + Math.random() * 200 + 200,
+                        y: GROUND_HEIGHT - 20,
+                        width: 20,
+                        height: 20,
+                        type: 'spike'
+                    });
+                }
+            }
+
+            // Check collisions with spikes and stair sides
+            obstacles.forEach(obstacle => {
+                if (obstacle.type === 'spike' && checkCollision(player, obstacle)) {
+                    gameOver = true;
+                    gameOverTimer = 0;
+                    console.log('Spike collision detected! Game Over');
+                }
+            });
+
+            // Check stair side collisions (end game)
+            stairs.forEach(stair => {
+                if (checkStairSideCollision(player, stair)) {
+                    gameOver = true;
+                    gameOverTimer = 0;
+                    console.log('Stair side collision detected! Game Over');
+                }
+            });
+
+            // Update score
+            score += 0.1;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ground
+            ctx.fillStyle = '#555';
+            ctx.fillRect(0, GROUND_HEIGHT, canvas.width, 50);
+
+            // Draw player
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Draw obstacles (spikes)
+            ctx.fillStyle = 'red';
+            obstacles.forEach(obstacle => {
+                if (obstacle.type === 'spike') {
+                    ctx.beginPath();
+                    ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+                    ctx.lineTo(obstacle.x + obstacle.width / 2, obstacle.y);
+                    ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+
+            // Draw stairs
+            ctx.fillStyle = '#8B4513'; // Brown color for stairs
+            stairs.forEach(stair => {
+                ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
+                
+                // Add stair step lines for visual effect
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                const stepHeight = 8;
+                for (let i = stepHeight; i < stair.height; i += stepHeight) {
+                    ctx.beginPath();
+                    ctx.moveTo(stair.x, stair.y + i);
+                    ctx.lineTo(stair.x + stair.width, stair.y + i);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw score
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${Math.floor(score)}`, 10, 30);
+
+            // Draw auto replay status
+            ctx.fillStyle = autoReplay ? 'green' : 'gray';
+            ctx.font = '16px Arial';
+            ctx.fillText(`Auto Replay: ${autoReplay ? 'ON' : 'OFF'}`, 10, 60);
+
+            // Draw pause status
+            if (isPaused) {
+                ctx.fillStyle = 'yellow';
+                ctx.font = '30px Arial';
+                ctx.fillText('PAUSED', canvas.width / 2 - 80, canvas.height / 2);
+            }
+
+            // Draw game over
+            if (gameOver) {
+                ctx.fillStyle = 'red';
+                ctx.font = '40px Arial';
+                ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+                ctx.fillText(`Score: ${Math.floor(score)}`, canvas.width / 2 - 100, canvas.height / 2 + 50);
+                
+                if (autoReplay) {
+                    const timeLeft = Math.ceil((AUTO_REPLAY_DELAY - gameOverTimer) / 1000);
+                    ctx.fillStyle = 'orange';
+                    ctx.font = '20px Arial';
+                    ctx.fillText(`Auto restart in ${timeLeft}...`, canvas.width / 2 - 100, canvas.height / 2 + 100);
+                } else {
+                    ctx.fillStyle = 'blue';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('Press R to toggle Auto Replay', canvas.width / 2 - 130, canvas.height / 2 + 100);
+                }
+            }
+
+            // Draw controls
+            ctx.fillStyle = 'black';
+            ctx.font = '14px Arial';
+            ctx.fillText('Controls: Space/↑=Jump, R=Auto Replay, P=Pause', 10, canvas.height - 10);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>
