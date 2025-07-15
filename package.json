@@ -1,0 +1,13 @@
+{
+  "name": "geometry-dash-game",
+  "version": "1.0.0",
+  "description": "Geometry Dash clone with high score system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["game", "geometry-dash", "html5"],
+  "author": "",
+  "license": "MIT"
+}

@@ -19,10 +19,71 @@
             margin: 0;
             background-color: #333;
         }
+        
+        #highScorePopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+        }
+        
+        #highScorePopup h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        #highScorePopup input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin: 10px 0;
+            width: 200px;
+        }
+        
+        #highScorePopup button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        #highScorePopup button:hover {
+            background-color: #45a049;
+        }
+        
+        #skipButton {
+            background-color: #f44336;
+        }
+        
+        #skipButton:hover {
+            background-color: #da190b;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <!-- High Score Popup -->
+    <div id="highScorePopup">
+        <h2>New High Score!</h2>
+        <p>Score: <span id="finalScore"></span></p>
+        <input type="text" id="playerName" placeholder="Enter your name (3 chars max)" maxlength="3">
+        <br>
+        <button onclick="saveHighScore()">Save Score</button>
+        <button id="skipButton" onclick="skipHighScore()">Skip</button>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -73,6 +134,8 @@
 
         let gameOver = false;
         let score = 0;
+        let highScoreShown = false;
+        let highScores = [];
         
         // Bonus notification system
         let bonusNotifications = [];
@@ -141,6 +204,7 @@
             score = 0;
             gameOver = false;
             gameOverTimer = 0;
+            highScoreShown = false;
             gameState = 'NORMAL';
             portalTimer = 0;
             flyingTimer = 0;
@@ -148,6 +212,94 @@
             animationFrame = 0;
             console.log('Game restarted!');
         }
+        
+        // High Score Management
+        async function loadHighScores() {
+            try {
+                const response = await fetch('/api/high-scores');
+                if (response.ok) {
+                    highScores = await response.json();
+                    console.log('High scores loaded:', highScores);
+                } else {
+                    console.log('Failed to load high scores, starting fresh');
+                    highScores = [];
+                }
+            } catch (error) {
+                console.log('Error loading high scores:', error);
+                highScores = [];
+            }
+        }
+        
+        async function saveHighScoresToFile() {
+            try {
+                const response = await fetch('/api/high-scores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(highScores)
+                });
+                
+                if (response.ok) {
+                    console.log('High scores saved successfully');
+                } else {
+                    console.error('Failed to save high scores');
+                }
+            } catch (error) {
+                console.error('Error saving high scores:', error);
+            }
+        }
+        
+        function isHighScore(currentScore) {
+            return highScores.length < 10 || currentScore > highScores[highScores.length - 1].score;
+        }
+        
+        function showHighScorePopup() {
+            document.getElementById('finalScore').textContent = Math.floor(score);
+            document.getElementById('highScorePopup').style.display = 'block';
+            document.getElementById('playerName').focus();
+        }
+        
+        function saveHighScore() {
+            const playerName = document.getElementById('playerName').value.trim().toUpperCase();
+            if (playerName.length === 0) {
+                alert('Please enter your name or initials!');
+                return;
+            }
+            
+            const newEntry = {
+                name: playerName,
+                score: Math.floor(score)
+            };
+            
+            highScores.push(newEntry);
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 10); // Keep only top 10
+            
+            saveHighScoresToFile();
+            hideHighScorePopup();
+        }
+        
+        function skipHighScore() {
+            hideHighScorePopup();
+        }
+        
+        function hideHighScorePopup() {
+            document.getElementById('highScorePopup').style.display = 'none';
+            document.getElementById('playerName').value = '';
+        }
+        
+        // Load high scores when page loads
+        window.addEventListener('load', () => {
+            loadHighScores();
+        });
+        
+        // Handle Enter key in popup
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.getElementById('highScorePopup').style.display === 'block') {
+                saveHighScore();
+            }
+        });
 
         // Enhanced collision detection for stairs
         function checkCollision(player, obstacle) {
@@ -576,8 +728,14 @@
             if (isPaused) return;
             
             if (gameOver) {
-                // Handle auto replay
-                if (autoReplay) {
+                // Show high score popup if it's a high score and not shown yet
+                if (!highScoreShown && isHighScore(score)) {
+                    showHighScorePopup();
+                    highScoreShown = true;
+                }
+                
+                // Handle auto replay (only if popup is not shown)
+                if (autoReplay && document.getElementById('highScorePopup').style.display !== 'block') {
                     gameOverTimer += 16; // Approximate 60fps frame time
                     if (gameOverTimer >= AUTO_REPLAY_DELAY) {
                         restartGame();
@@ -975,15 +1133,34 @@
                 ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
                 ctx.fillText(`Score: ${Math.floor(score)}`, canvas.width / 2 - 100, canvas.height / 2 + 50);
                 
-                if (autoReplay) {
+                // Show high score message if applicable
+                if (isHighScore(score)) {
+                    ctx.fillStyle = 'gold';
+                    ctx.font = '24px Arial';
+                    ctx.fillText('NEW HIGH SCORE!', canvas.width / 2 - 100, canvas.height / 2 - 50);
+                }
+                
+                if (autoReplay && document.getElementById('highScorePopup').style.display !== 'block') {
                     const timeLeft = Math.ceil((AUTO_REPLAY_DELAY - gameOverTimer) / 1000);
                     ctx.fillStyle = 'orange';
                     ctx.font = '20px Arial';
                     ctx.fillText(`Auto restart in ${timeLeft}...`, canvas.width / 2 - 100, canvas.height / 2 + 100);
-                } else {
+                } else if (document.getElementById('highScorePopup').style.display !== 'block') {
                     ctx.fillStyle = 'blue';
                     ctx.font = '20px Arial';
                     ctx.fillText('Press R to toggle Auto Replay', canvas.width / 2 - 130, canvas.height / 2 + 100);
+                }
+                
+                // Display current high scores
+                if (highScores.length > 0) {
+                    ctx.fillStyle = 'black';
+                    ctx.font = '16px Arial';
+                    ctx.fillText('High Scores:', 10, 150);
+                    
+                    for (let i = 0; i < Math.min(5, highScores.length); i++) {
+                        const entry = highScores[i];
+                        ctx.fillText(`${i + 1}. ${entry.name} - ${entry.score}`, 10, 175 + i * 20);
+                    }
                 }
             }
 
