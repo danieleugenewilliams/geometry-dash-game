@@ -67,6 +67,10 @@
         // Stairs system - clean start, obstacles generated dynamically
         let stairs = [];
 
+        // Coin collection system
+        let coins = [];
+        let sparkles = [];
+
         let gameOver = false;
         let score = 0;
         
@@ -131,6 +135,8 @@
             stairs = [];
             portals = [];
             asteroids = [];
+            coins = [];
+            sparkles = [];
             bonusNotifications = [];
             score = 0;
             gameOver = false;
@@ -297,6 +303,67 @@
             });
         }
 
+        // Coin generation and management
+        function generateCoins() {
+            // Generate coins for both normal and flying modes
+            const coinSpawnChance = 0.01; // 1% chance per frame
+            
+            if (Math.random() < coinSpawnChance) {
+                let yPosition;
+                
+                if (gameState === 'FLYING') {
+                    // Flying mode: coins can appear anywhere vertically
+                    yPosition = 30 + Math.random() * (canvas.height - 60);
+                } else {
+                    // Normal mode: coins appear at different heights
+                    const heightOptions = [
+                        GROUND_HEIGHT - 30, // Ground level
+                        GROUND_HEIGHT - 80, // Jump height
+                        GROUND_HEIGHT - 130, // High jump height
+                        GROUND_HEIGHT - 180  // Very high
+                    ];
+                    yPosition = heightOptions[Math.floor(Math.random() * heightOptions.length)];
+                }
+                
+                const newCoin = {
+                    x: canvas.width + 20,
+                    y: yPosition,
+                    width: 20,
+                    height: 20,
+                    rotation: 0,
+                    collected: false
+                };
+                
+                // Basic collision avoidance with obstacles and other coins
+                let validPosition = true;
+                
+                // Check distance from other coins
+                for (let existing of coins) {
+                    const dx = newCoin.x - existing.x;
+                    const dy = newCoin.y - existing.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 60) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                if (validPosition) {
+                    coins.push(newCoin);
+                }
+            }
+        }
+        
+        function updateCoins() {
+            coins.forEach(coin => {
+                coin.x -= MOVE_SPEED;
+                coin.rotation += 0.1; // Spinning animation
+            });
+            
+            // Remove off-screen coins
+            coins = coins.filter(coin => coin.x + coin.width > 0);
+        }
+
         // Asteroid generation and management
         function generateAsteroids() {
             if (asteroids.length === 0 || asteroids[asteroids.length - 1].x < canvas.width - 250) {
@@ -419,6 +486,90 @@
             ctx.restore();
         }
 
+        // Draw coin
+        function drawCoin(coin) {
+            ctx.save();
+            ctx.translate(coin.x + coin.width/2, coin.y + coin.height/2);
+            ctx.rotate(coin.rotation);
+            
+            // Draw gold coin with gradient
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coin.width/2);
+            gradient.addColorStop(0, '#FFD700'); // Gold center
+            gradient.addColorStop(0.7, '#FFA500'); // Orange middle
+            gradient.addColorStop(1, '#B8860B'); // Dark gold edge
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, coin.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add shine effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(-coin.width/6, -coin.width/6, coin.width/4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add border
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, coin.width/2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Create sparkle particles
+        function createSparkleParticles(x, y) {
+            const particles = [];
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const speed = 2 + Math.random() * 3;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    decay: 0.02
+                });
+            }
+            return particles;
+        }
+
+        // Update sparkles
+        function updateSparkles() {
+            sparkles.forEach(sparkle => {
+                sparkle.timer += 16;
+                sparkle.particles.forEach(particle => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life -= particle.decay;
+                    particle.vx *= 0.98; // Slow down
+                    particle.vy *= 0.98;
+                });
+                sparkle.particles = sparkle.particles.filter(p => p.life > 0);
+            });
+            
+            // Remove expired sparkles
+            sparkles = sparkles.filter(sparkle => sparkle.timer < sparkle.maxTimer && sparkle.particles.length > 0);
+        }
+
+        // Draw sparkles
+        function drawSparkles() {
+            sparkles.forEach(sparkle => {
+                sparkle.particles.forEach(particle => {
+                    ctx.save();
+                    ctx.globalAlpha = particle.life;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            });
+        }
+
         // Game loop
         function update() {
             // Skip update if paused
@@ -481,6 +632,35 @@
                             console.log('Asteroid collision detected! Game Over');
                         }
                     });
+
+                    // Check coin collisions
+                    coins.forEach(coin => {
+                        if (!coin.collected && checkCollision(player, coin)) {
+                            coin.collected = true;
+                            score += 10;
+                            
+                            // Create sparkle effect
+                            sparkles.push({
+                                x: coin.x + coin.width/2,
+                                y: coin.y + coin.height/2,
+                                particles: createSparkleParticles(coin.x + coin.width/2, coin.y + coin.height/2),
+                                timer: 0,
+                                maxTimer: 1000
+                            });
+                            
+                            // Add bonus notification
+                            bonusNotifications.push({
+                                x: coin.x + coin.width/2,
+                                y: coin.y - 20,
+                                text: '+10',
+                                timer: 0,
+                                maxTimer: 1000
+                            });
+                        }
+                    });
+                    
+                    // Remove collected coins
+                    coins = coins.filter(coin => !coin.collected);
                     break;
                 case 'PORTAL_EXIT':
                     flyingTimer += 16;
@@ -513,6 +693,13 @@
 
             // Update portals
             updatePortals();
+
+            // Generate and update coins
+            generateCoins();
+            updateCoins();
+
+            // Update sparkles
+            updateSparkles();
 
             // Update score
             score += 0.1;
@@ -618,6 +805,35 @@
                     console.log('Stair side collision detected! Game Over');
                 }
             });
+
+            // Check coin collisions
+            coins.forEach(coin => {
+                if (!coin.collected && checkCollision(player, coin)) {
+                    coin.collected = true;
+                    score += 10;
+                    
+                    // Create sparkle effect
+                    sparkles.push({
+                        x: coin.x + coin.width/2,
+                        y: coin.y + coin.height/2,
+                        particles: createSparkleParticles(coin.x + coin.width/2, coin.y + coin.height/2),
+                        timer: 0,
+                        maxTimer: 1000
+                    });
+                    
+                    // Add bonus notification
+                    bonusNotifications.push({
+                        x: coin.x + coin.width/2,
+                        y: coin.y - 20,
+                        text: '+10',
+                        timer: 0,
+                        maxTimer: 1000
+                    });
+                }
+            });
+            
+            // Remove collected coins
+            coins = coins.filter(coin => !coin.collected);
         }
 
         function draw() {
@@ -699,6 +915,14 @@
                     }
                 });
             }
+
+            // Draw coins
+            coins.forEach(coin => {
+                drawCoin(coin);
+            });
+
+            // Draw sparkles
+            drawSparkles();
 
             // Draw score
             ctx.fillStyle = gameState === 'FLYING' ? 'white' : 'black';
