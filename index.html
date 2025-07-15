@@ -33,6 +33,14 @@
         const JUMP_FORCE = -15;
         const MOVE_SPEED = 5;
         const GROUND_HEIGHT = canvas.height - 50;
+        
+        // Portal and flying constants
+        const PORTAL_SPAWN_INTERVAL = 30000; // 30 seconds in milliseconds
+        const FLYING_DURATION = 30000; // 30 seconds in flying mode
+        const FLYING_GRAVITY = 0.4;
+        const THRUST_FORCE = -0.5;
+        const AIR_RESISTANCE = 0.9;
+        const MAX_VERTICAL_SPEED = 8;
 
         // Player object
         let player = {
@@ -44,6 +52,15 @@
             isJumping: false
         };
 
+        // Game state management
+        let gameState = 'NORMAL'; // 'NORMAL', 'PORTAL_TRANSITION', 'FLYING', 'PORTAL_EXIT'
+        let portalTimer = 0;
+        let flyingTimer = 0;
+        let portals = [];
+        let asteroids = [];
+        let spaceKeyPressed = false;
+        let animationFrame = 0;
+
         // Obstacles and stairs - completely clean start
         let obstacles = [];
 
@@ -52,6 +69,9 @@
 
         let gameOver = false;
         let score = 0;
+        
+        // Bonus notification system
+        let bonusNotifications = [];
         let autoReplay = false;
         let isPaused = false;
         let gameOverTimer = 0;
@@ -66,8 +86,13 @@
         document.addEventListener('keydown', (e) => {
             console.log('Key pressed:', e.code);
             
-            // Jump controls (only when game is running)
-            if ((e.code === 'Space' || e.code === 'ArrowUp') && !player.isJumping && !gameOver && !isPaused) {
+            // Track space key for flying mode
+            if (e.code === 'Space') {
+                spaceKeyPressed = true;
+            }
+            
+            // Jump controls (only when game is running and in normal mode)
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && !player.isJumping && !gameOver && !isPaused && gameState === 'NORMAL') {
                 player.velocityY = JUMP_FORCE;
                 player.isJumping = true;
                 console.log('Jump triggered!');
@@ -86,6 +111,12 @@
             }
         });
 
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                spaceKeyPressed = false;
+            }
+        });
+
         // Game restart function
         function restartGame() {
             player = {
@@ -98,9 +129,17 @@
             };
             obstacles = [];
             stairs = [];
+            portals = [];
+            asteroids = [];
+            bonusNotifications = [];
             score = 0;
             gameOver = false;
             gameOverTimer = 0;
+            gameState = 'NORMAL';
+            portalTimer = 0;
+            flyingTimer = 0;
+            spaceKeyPressed = false;
+            animationFrame = 0;
             console.log('Game restarted!');
         }
 
@@ -136,6 +175,250 @@
                    player.velocityY >= 0;
         }
 
+        // Portal management functions
+        function spawnPortal() {
+            portals.push({
+                x: canvas.width + 100,
+                y: GROUND_HEIGHT - 120,
+                width: 80,
+                height: 80,
+                rotation: 0,
+                particles: []
+            });
+        }
+
+        function updatePortals() {
+            portals.forEach(portal => {
+                portal.x -= MOVE_SPEED;
+                portal.rotation += 0.1;
+                
+                // Check collision with player
+                if (checkCollision(player, portal) && gameState === 'NORMAL') {
+                    gameState = 'PORTAL_TRANSITION';
+                    flyingTimer = 0;
+                    // Transform player to jet
+                    player.width = 40;
+                    player.height = 20;
+                    player.y = canvas.height / 2; // Center vertically
+                }
+            });
+            
+            // Remove off-screen portals
+            portals = portals.filter(portal => portal.x + portal.width > 0);
+        }
+
+        function drawPortal(portal) {
+            ctx.save();
+            ctx.translate(portal.x + portal.width/2, portal.y + portal.height/2);
+            ctx.rotate(portal.rotation);
+            
+            // Draw portal circle with gradient
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, portal.width/2);
+            gradient.addColorStop(0, 'rgba(138, 43, 226, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.6)');
+            gradient.addColorStop(1, 'rgba(25, 25, 112, 0.4)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, portal.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw swirl effect
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, 10 + i * 10, portal.rotation + i, portal.rotation + i + Math.PI);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        // Flying mode physics
+        function updateFlyingMode() {
+            if (spaceKeyPressed) {
+                player.velocityY += THRUST_FORCE;
+            } else {
+                player.velocityY += FLYING_GRAVITY;
+            }
+            
+            // Apply air resistance
+            player.velocityY *= AIR_RESISTANCE;
+            
+            // Limit vertical speed
+            player.velocityY = Math.max(-MAX_VERTICAL_SPEED, Math.min(MAX_VERTICAL_SPEED, player.velocityY));
+            
+            // Update position
+            player.y += player.velocityY;
+            
+            // Screen boundaries
+            if (player.y < 0) {
+                player.y = 0;
+                player.velocityY = 0;
+            }
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.velocityY = 0;
+            }
+            
+            // Continuous scoring in flying mode
+            score += 0.15; // Slightly higher than normal mode
+            
+            // Proximity bonuses for asteroids
+            asteroids.forEach(asteroid => {
+                const dx = player.x + player.width/2 - (asteroid.x + asteroid.width/2);
+                const dy = player.y + player.height/2 - (asteroid.y + asteroid.height/2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const proximityThreshold = 80; // Distance for proximity bonus
+                
+                if (distance < proximityThreshold && !asteroid.bonusAwarded) {
+                    const bonusMultiplier = Math.max(0.1, 1 - (distance / proximityThreshold));
+                    const bonusPoints = bonusMultiplier * 2;
+                    score += bonusPoints; // Proximity bonus
+                    asteroid.bonusAwarded = true; // Prevent multiple bonuses for same asteroid
+                    
+                    // Add visual notification
+                    bonusNotifications.push({
+                        x: asteroid.x + asteroid.width/2,
+                        y: asteroid.y - 20,
+                        text: `+${Math.floor(bonusPoints)}`,
+                        timer: 0,
+                        maxTimer: 1000 // 1 second display
+                    });
+                }
+            });
+            
+            // Update bonus notifications
+            bonusNotifications = bonusNotifications.filter(notification => {
+                notification.timer += 16; // Increment timer
+                notification.y -= 1; // Float upward
+                return notification.timer < notification.maxTimer;
+            });
+        }
+
+        // Asteroid generation and management
+        function generateAsteroids() {
+            if (asteroids.length === 0 || asteroids[asteroids.length - 1].x < canvas.width - 250) {
+                const sizes = [30, 50, 70];
+                const size = sizes[Math.floor(Math.random() * sizes.length)];
+                
+                // Zone-based spawning: 25% top, 50% middle, 25% bottom
+                const zoneRandom = Math.random();
+                let yPosition;
+                
+                if (zoneRandom < 0.25) {
+                    // Top zone (0-33% of screen)
+                    yPosition = Math.random() * (canvas.height * 0.33);
+                } else if (zoneRandom < 0.75) {
+                    // Middle zone (33-67% of screen)
+                    yPosition = Math.random() * (canvas.height * 0.34) + canvas.height * 0.33;
+                } else {
+                    // Bottom zone (67-100% of screen)
+                    yPosition = Math.random() * (canvas.height * 0.33) + canvas.height * 0.67;
+                }
+                
+                // Ensure minimum clearance from edges
+                const minClearance = size / 2 + 10;
+                yPosition = Math.max(minClearance, Math.min(canvas.height - minClearance, yPosition));
+                
+                const newAsteroid = {
+                    x: canvas.width + Math.random() * 100,
+                    y: yPosition,
+                    width: size,
+                    height: size,
+                    rotation: 0,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1
+                };
+                
+                // Basic collision avoidance with existing asteroids
+                let validPosition = true;
+                for (let existing of asteroids) {
+                    const dx = newAsteroid.x - existing.x;
+                    const dy = newAsteroid.y - existing.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDistance = (newAsteroid.width + existing.width) / 2 + 20;
+                    
+                    if (distance < minDistance) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                if (validPosition) {
+                    asteroids.push(newAsteroid);
+                }
+            }
+        }
+
+        function updateAsteroids() {
+            asteroids.forEach(asteroid => {
+                asteroid.x -= MOVE_SPEED;
+                asteroid.rotation += asteroid.rotationSpeed;
+            });
+            
+            // Remove off-screen asteroids
+            asteroids = asteroids.filter(asteroid => asteroid.x + asteroid.width > 0);
+        }
+
+        function drawAsteroid(asteroid) {
+            ctx.save();
+            ctx.translate(asteroid.x + asteroid.width/2, asteroid.y + asteroid.height/2);
+            ctx.rotate(asteroid.rotation);
+            
+            // Draw irregular asteroid shape
+            ctx.fillStyle = '#8B4513';
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            const points = 8;
+            for (let i = 0; i < points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const radius = (asteroid.width / 2) * (0.8 + Math.random() * 0.4);
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Draw jet sprite
+        function drawJet(x, y, width, height) {
+            ctx.save();
+            
+            // Main body (triangle)
+            ctx.fillStyle = '#C0C0C0';
+            ctx.beginPath();
+            ctx.moveTo(x + width, y + height/2); // Point
+            ctx.lineTo(x, y); // Top back
+            ctx.lineTo(x, y + height); // Bottom back
+            ctx.closePath();
+            ctx.fill();
+            
+            // Exhaust flames
+            ctx.fillStyle = spaceKeyPressed ? '#00BFFF' : '#4169E1';
+            ctx.beginPath();
+            ctx.ellipse(x - 10, y + height/2, 8, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Wing details
+            ctx.fillStyle = '#A0A0A0';
+            ctx.fillRect(x + width/3, y - 2, width/3, 2);
+            ctx.fillRect(x + width/3, y + height, width/3, 2);
+            
+            ctx.restore();
+        }
+
         // Game loop
         function update() {
             // Skip update if paused
@@ -152,8 +435,90 @@
                 return;
             }
 
-            console.log('Update running, player.y:', player.y);
+            animationFrame++;
+            console.log('Update running, gameState:', gameState, 'player.y:', player.y);
 
+            // Update portal timer and spawn portals
+            if (gameState === 'NORMAL') {
+                portalTimer += 16; // Approximate 60fps frame time
+                if (portalTimer >= PORTAL_SPAWN_INTERVAL) {
+                    spawnPortal();
+                    portalTimer = 0;
+                }
+            }
+
+            // Handle different game states
+            switch (gameState) {
+                case 'NORMAL':
+                    updateNormalMode();
+                    break;
+                case 'PORTAL_TRANSITION':
+                    flyingTimer += 16;
+                    if (flyingTimer >= 500) { // 0.5 second transition
+                        gameState = 'FLYING';
+                        flyingTimer = 0;
+                        // Clear ground obstacles
+                        obstacles = [];
+                        stairs = [];
+                    }
+                    break;
+                case 'FLYING':
+                    updateFlyingMode();
+                    generateAsteroids();
+                    updateAsteroids();
+                    
+                    flyingTimer += 16;
+                    if (flyingTimer >= FLYING_DURATION) {
+                        gameState = 'PORTAL_EXIT';
+                        flyingTimer = 0;
+                    }
+                    
+                    // Check asteroid collisions
+                    asteroids.forEach(asteroid => {
+                        if (checkCollision(player, asteroid)) {
+                            gameOver = true;
+                            gameOverTimer = 0;
+                            console.log('Asteroid collision detected! Game Over');
+                        }
+                    });
+                    break;
+                case 'PORTAL_EXIT':
+                    flyingTimer += 16;
+                    if (flyingTimer >= 500) { // 0.5 second transition
+                        gameState = 'NORMAL';
+                        // Transform back to normal player
+                        player.width = PLAYER_SIZE;
+                        player.height = PLAYER_SIZE;
+                        player.y = GROUND_HEIGHT - PLAYER_SIZE;
+                        player.velocityY = 0;
+                        player.isJumping = false;
+                        // Clear asteroids
+                        asteroids = [];
+                        portalTimer = 0;
+                        
+                        // Portal completion bonus
+                        score += 50; // Substantial bonus for completing flying section
+                        
+                        // Add visual notification for portal completion
+                        bonusNotifications.push({
+                            x: canvas.width / 2,
+                            y: canvas.height / 2,
+                            text: 'PORTAL COMPLETE +50',
+                            timer: 0,
+                            maxTimer: 2000 // 2 second display
+                        });
+                    }
+                    break;
+            }
+
+            // Update portals
+            updatePortals();
+
+            // Update score
+            score += 0.1;
+        }
+
+        function updateNormalMode() {
             // Apply gravity
             player.velocityY += GRAVITY;
             player.y += player.velocityY;
@@ -253,69 +618,131 @@
                     console.log('Stair side collision detected! Game Over');
                 }
             });
-
-            // Update score
-            score += 0.1;
         }
 
         function draw() {
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw ground
-            ctx.fillStyle = '#555';
-            ctx.fillRect(0, GROUND_HEIGHT, canvas.width, 50);
-
-            // Draw player
-            ctx.fillStyle = 'blue';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Draw obstacles (spikes)
-            ctx.fillStyle = 'red';
-            obstacles.forEach(obstacle => {
-                if (obstacle.type === 'spike') {
-                    ctx.beginPath();
-                    ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
-                    ctx.lineTo(obstacle.x + obstacle.width / 2, obstacle.y);
-                    ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-            });
-
-            // Draw stairs
-            ctx.fillStyle = '#8B4513'; // Brown color for stairs
-            stairs.forEach(stair => {
-                ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
+            // Draw background based on game state
+            if (gameState === 'FLYING') {
+                // Space background
+                ctx.fillStyle = '#000033';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Add stair step lines for visual effect
-                ctx.strokeStyle = '#654321';
-                ctx.lineWidth = 2;
-                const stepHeight = 8;
-                for (let i = stepHeight; i < stair.height; i += stepHeight) {
-                    ctx.beginPath();
-                    ctx.moveTo(stair.x, stair.y + i);
-                    ctx.lineTo(stair.x + stair.width, stair.y + i);
-                    ctx.stroke();
+                // Draw stars
+                ctx.fillStyle = 'white';
+                for (let i = 0; i < 50; i++) {
+                    const x = (animationFrame + i * 137) % canvas.width;
+                    const y = (i * 73) % canvas.height;
+                    ctx.fillRect(x, y, 1, 1);
                 }
+            } else {
+                // Normal background
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw ground
+                ctx.fillStyle = '#555';
+                ctx.fillRect(0, GROUND_HEIGHT, canvas.width, 50);
+            }
+
+            // Draw player based on game state
+            if (gameState === 'FLYING' || gameState === 'PORTAL_TRANSITION' || gameState === 'PORTAL_EXIT') {
+                drawJet(player.x, player.y, player.width, player.height);
+            } else {
+                // Normal player
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            // Draw portals
+            portals.forEach(portal => {
+                drawPortal(portal);
             });
+
+            // Draw asteroids in flying mode
+            if (gameState === 'FLYING') {
+                asteroids.forEach(asteroid => {
+                    drawAsteroid(asteroid);
+                });
+            }
+
+            // Draw obstacles (spikes) in normal mode
+            if (gameState === 'NORMAL') {
+                ctx.fillStyle = 'red';
+                obstacles.forEach(obstacle => {
+                    if (obstacle.type === 'spike') {
+                        ctx.beginPath();
+                        ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+                        ctx.lineTo(obstacle.x + obstacle.width / 2, obstacle.y);
+                        ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                });
+
+                // Draw stairs
+                ctx.fillStyle = '#8B4513'; // Brown color for stairs
+                stairs.forEach(stair => {
+                    ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
+                    
+                    // Add stair step lines for visual effect
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 2;
+                    const stepHeight = 8;
+                    for (let i = stepHeight; i < stair.height; i += stepHeight) {
+                        ctx.beginPath();
+                        ctx.moveTo(stair.x, stair.y + i);
+                        ctx.lineTo(stair.x + stair.width, stair.y + i);
+                        ctx.stroke();
+                    }
+                });
+            }
 
             // Draw score
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = gameState === 'FLYING' ? 'white' : 'black';
             ctx.font = '20px Arial';
             ctx.fillText(`Score: ${Math.floor(score)}`, 10, 30);
 
-            // Draw auto replay status
-            ctx.fillStyle = autoReplay ? 'green' : 'gray';
+            // Draw game state indicator
+            ctx.fillStyle = gameState === 'FLYING' ? 'white' : 'purple';
             ctx.font = '16px Arial';
-            ctx.fillText(`Auto Replay: ${autoReplay ? 'ON' : 'OFF'}`, 10, 60);
+            ctx.fillText(`Mode: ${gameState}`, 10, 55);
+
+            // Draw portal timer
+            if (gameState === 'NORMAL') {
+                const timeToPortal = Math.ceil((PORTAL_SPAWN_INTERVAL - portalTimer) / 1000);
+                ctx.fillStyle = 'orange';
+                ctx.fillText(`Portal in: ${timeToPortal}s`, 10, 75);
+            }
+
+            // Draw flying timer
+            if (gameState === 'FLYING') {
+                const timeLeft = Math.ceil((FLYING_DURATION - flyingTimer) / 1000);
+                ctx.fillStyle = 'white';
+                ctx.fillText(`Flying: ${timeLeft}s`, 10, 75);
+            }
+
+            // Draw auto replay status
+            ctx.fillStyle = gameState === 'FLYING' ? 'white' : (autoReplay ? 'green' : 'gray');
+            ctx.font = '16px Arial';
+            ctx.fillText(`Auto Replay: ${autoReplay ? 'ON' : 'OFF'}`, 10, 95);
 
             // Draw pause status
             if (isPaused) {
-                ctx.fillStyle = 'yellow';
+                ctx.fillStyle = gameState === 'FLYING' ? 'white' : 'yellow';
                 ctx.font = '30px Arial';
                 ctx.fillText('PAUSED', canvas.width / 2 - 80, canvas.height / 2);
             }
+            
+            // Draw bonus notifications
+            bonusNotifications.forEach(notification => {
+                const alpha = Math.max(0, 1 - (notification.timer / notification.maxTimer));
+                ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+                ctx.font = '16px Arial';
+                ctx.fillText(notification.text, notification.x - 20, notification.y);
+            });
 
             // Draw game over
             if (gameOver) {
@@ -337,9 +764,13 @@
             }
 
             // Draw controls
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = gameState === 'FLYING' ? 'white' : 'black';
             ctx.font = '14px Arial';
-            ctx.fillText('Controls: Space/↑=Jump, R=Auto Replay, P=Pause', 10, canvas.height - 10);
+            if (gameState === 'FLYING') {
+                ctx.fillText('Controls: Hold Space=Fly Up, Release=Fall Down, R=Auto Replay, P=Pause', 10, canvas.height - 10);
+            } else {
+                ctx.fillText('Controls: Space/↑=Jump, R=Auto Replay, P=Pause', 10, canvas.height - 10);
+            }
         }
 
         function gameLoop() {
