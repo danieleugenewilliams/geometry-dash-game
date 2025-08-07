@@ -1,0 +1,162 @@
+#gameCanvas {
+    display: block;
+    margin: 20px auto;
+    border: 1px solid black;
+    background-color: #f0f0f0;
+}
+
+body {
+    margin: 0;
+    background-color: #333;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 20px auto;
+}
+
+#highScorePopup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    text-align: center;
+}
+
+#highScorePopup h2 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+#highScorePopup input {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    margin: 10px 0;
+    width: 200px;
+}
+
+#highScorePopup button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+#highScorePopup button:hover {
+    background-color: #45a049;
+}
+
+#skipButton {
+    background-color: #f44336;
+}
+
+#skipButton:hover {
+    background-color: #da190b;
+}
+
+/* Level Selection Menu */
+#levelSelectMenu {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    text-align: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    width: 80%;
+    max-width: 800px;
+}
+
+#levelSelectMenu h1 {
+    margin-bottom: 30px;
+    font-size: 36px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#levelSelectMenu h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #f0f0f0;
+}
+
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.level-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.level-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+.level-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.level-card p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #e0e0e0;
+}
+
+.level-card .difficulty {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.level-card .difficulty.easy { color: #4CAF50; }
+.level-card .difficulty.medium { color: #FF9800; }
+.level-card .difficulty.hard { color: #F44336; }
+
+.endless-mode {
+    grid-column: span 2;
+    background: rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.5);
+}
+
+.endless-mode:hover {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.8);
+}
+
+.menu-footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #cccccc;
+}

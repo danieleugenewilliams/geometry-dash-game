@@ -1,0 +1,245 @@
+{
+  "levelId": "level-3",
+  "name": "Sky Adventure",
+  "description": "Master ground navigation, then survive an intense asteroid field",
+  "difficulty": "medium",
+  "duration": 60000,
+  "victoryCondition": {
+    "type": "survival",
+    "target": 60000
+  },
+  "timeline": [
+    {
+      "time": 1000,
+      "action": "spawnCoin",
+      "params": { "x": 400, "y": 300 }
+    },
+    {
+      "time": 2500,
+      "action": "spawnCoin",
+      "params": { "x": 600, "y": 250 }
+    },
+    {
+      "time": 4000,
+      "action": "spawnSpike",
+      "params": { "x": 800, "y": 330 }
+    },
+    {
+      "time": 5500,
+      "action": "spawnCoin",
+      "params": { "x": 1000, "y": 280 }
+    },
+    {
+      "time": 6500,
+      "action": "spawnStair",
+      "params": { "x": 1200, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 7000,
+      "action": "spawnCoin",
+      "params": { "x": 1300, "y": 200 }
+    },
+    {
+      "time": 8500,
+      "action": "spawnSpike",
+      "params": { "x": 1500, "y": 330 }
+    },
+    {
+      "time": 9000,
+      "action": "spawnSpike",
+      "params": { "x": 1550, "y": 330 }
+    },
+    {
+      "time": 10500,
+      "action": "spawnCoin",
+      "params": { "x": 1750, "y": 250 }
+    },
+    {
+      "time": 12000,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 1950, "y": 280 }
+    },
+    {
+      "time": 13500,
+      "action": "spawnCoin",
+      "params": { "x": 2150, "y": 280 }
+    },
+    {
+      "time": 15000,
+      "action": "spawnPortal",
+      "params": { "x": 2400, "y": 230 }
+    },
+    {
+      "time": 20000,
+      "action": "spawnAsteroid",
+      "params": { "x": 2800, "y": 150, "size": 40 }
+    },
+    {
+      "time": 21000,
+      "action": "spawnCoin",
+      "params": { "x": 3000, "y": 200 }
+    },
+    {
+      "time": 22000,
+      "action": "spawnAsteroid",
+      "params": { "x": 3200, "y": 250, "size": 50 }
+    },
+    {
+      "time": 23000,
+      "action": "spawnCoin",
+      "params": { "x": 3400, "y": 100 }
+    },
+    {
+      "time": 24000,
+      "action": "spawnAsteroid",
+      "params": { "x": 3600, "y": 300, "size": 60 }
+    },
+    {
+      "time": 25000,
+      "action": "spawnAsteroid",
+      "params": { "x": 3800, "y": 120, "size": 45 }
+    },
+    {
+      "time": 26000,
+      "action": "spawnCoin",
+      "params": { "x": 4000, "y": 250 }
+    },
+    {
+      "time": 27000,
+      "action": "spawnAsteroid",
+      "params": { "x": 4200, "y": 200, "size": 55 }
+    },
+    {
+      "time": 28000,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 4400, "y": 150 }
+    },
+    {
+      "time": 29000,
+      "action": "spawnAsteroid",
+      "params": { "x": 4600, "y": 300, "size": 40 }
+    },
+    {
+      "time": 30000,
+      "action": "spawnAsteroid",
+      "params": { "x": 4800, "y": 100, "size": 50 }
+    },
+    {
+      "time": 35000,
+      "action": "spawnCoin",
+      "params": { "x": 5500, "y": 280 }
+    },
+    {
+      "time": 36000,
+      "action": "spawnCoin",
+      "params": { "x": 5700, "y": 250 }
+    },
+    {
+      "time": 37500,
+      "action": "spawnSpike",
+      "params": { "x": 5900, "y": 330 }
+    },
+    {
+      "time": 38000,
+      "action": "spawnSpike",
+      "params": { "x": 5950, "y": 330 }
+    },
+    {
+      "time": 39500,
+      "action": "spawnCoin",
+      "params": { "x": 6150, "y": 200 }
+    },
+    {
+      "time": 41000,
+      "action": "spawnStair",
+      "params": { "x": 6350, "y": 250, "width": 80, "height": 100 }
+    },
+    {
+      "time": 41500,
+      "action": "spawnCoin",
+      "params": { "x": 6450, "y": 180 }
+    },
+    {
+      "time": 43000,
+      "action": "spawnCoin",
+      "params": { "x": 6650, "y": 280 }
+    },
+    {
+      "time": 44000,
+      "action": "spawnSpike",
+      "params": { "x": 6850, "y": 330 }
+    },
+    {
+      "time": 45000,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 7050, "y": 250 }
+    },
+    {
+      "time": 46500,
+      "action": "spawnCoin",
+      "params": { "x": 7250, "y": 280 }
+    },
+    {
+      "time": 47500,
+      "action": "spawnSpike",
+      "params": { "x": 7450, "y": 330 }
+    },
+    {
+      "time": 48000,
+      "action": "spawnSpike",
+      "params": { "x": 7500, "y": 330 }
+    },
+    {
+      "time": 49500,
+      "action": "spawnCoin",
+      "params": { "x": 7700, "y": 200 }
+    },
+    {
+      "time": 51000,
+      "action": "spawnStair",
+      "params": { "x": 7900, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 51500,
+      "action": "spawnCoin",
+      "params": { "x": 8000, "y": 200 }
+    },
+    {
+      "time": 53000,
+      "action": "spawnCoin",
+      "params": { "x": 8200, "y": 250 }
+    },
+    {
+      "time": 54000,
+      "action": "spawnSpike",
+      "params": { "x": 8400, "y": 330 }
+    },
+    {
+      "time": 55000,
+      "action": "spawnGreenOrb",
+      "params": { "x": 8600, "y": 280 }
+    },
+    {
+      "time": 56500,
+      "action": "spawnCoin",
+      "params": { "x": 8800, "y": 250 }
+    },
+    {
+      "time": 57500,
+      "action": "spawnCoin",
+      "params": { "x": 9000, "y": 280 }
+    },
+    {
+      "time": 58500,
+      "action": "spawnCoin",
+      "params": { "x": 9200, "y": 250 }
+    }
+  ],
+  "flyingModeConfig": {
+    "asteroidSpawnRate": 0.015,
+    "asteroidSizes": [30, 50],
+    "asteroidZones": ["middle", "bottom"],
+    "coinSpawnRate": 0.02
+  },
+  "patterns": {}
+}

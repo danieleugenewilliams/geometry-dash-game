@@ -1,0 +1,292 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Geometry Dash Level Schema",
+  "description": "Schema for defining game levels",
+  "required": [
+    "levelId",
+    "name",
+    "duration",
+    "victoryCondition",
+    "timeline"
+  ],
+  "properties": {
+    "levelId": {
+      "type": "string",
+      "pattern": "^level-[0-9]+$",
+      "description": "Unique identifier for the level"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name for the level"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the level"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard",
+        "expert"
+      ],
+      "description": "Difficulty rating"
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 1000,
+      "description": "Level duration in milliseconds"
+    },
+    "victoryCondition": {
+      "type": "object",
+      "required": [
+        "type",
+        "target"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "survival",
+            "score",
+            "distance"
+          ],
+          "description": "Type of victory condition"
+        },
+        "target": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Target value for victory condition"
+        }
+      }
+    },
+    "gameConstants": {
+      "type": "object",
+      "description": "Override default game constants",
+      "properties": {
+        "playerSize": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 100
+        },
+        "gravity": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 2.0
+        },
+        "jumpForce": {
+          "type": "number",
+          "minimum": -30,
+          "maximum": -5
+        },
+        "moveSpeed": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "portalSpawnInterval": {
+          "type": "number",
+          "minimum": 10000
+        },
+        "flyingDuration": {
+          "type": "number",
+          "minimum": 5000
+        },
+        "invincibilityDuration": {
+          "type": "number",
+          "minimum": 1000
+        },
+        "superInvincibilityDuration": {
+          "type": "number",
+          "minimum": 1000
+        },
+        "orangeOrbInterval": {
+          "type": "number",
+          "minimum": 50
+        },
+        "greenOrbInterval": {
+          "type": "number",
+          "minimum": 500
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "description": "Timeline of events in the level",
+      "items": {
+        "type": "object",
+        "required": [
+          "time",
+          "action"
+        ],
+        "properties": {
+          "time": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Time in milliseconds when event occurs"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "spawnCoin",
+              "spawnSpike",
+              "spawnStair",
+              "spawnPortal",
+              "spawnOrangeOrb",
+              "spawnGreenOrb",
+              "spawnAsteroid",
+              "spawnGreenPortal",
+              "spawnCeilingSpike",
+              "startPattern"
+            ],
+            "description": "Action to perform"
+          },
+          "params": {
+            "type": "object",
+            "description": "Parameters for the action"
+          }
+        }
+      }
+    },
+    "patterns": {
+      "type": "object",
+      "description": "Reusable patterns for spawning",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "type": "object",
+          "required": [
+            "type",
+            "elements"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "repeating",
+                "sequential",
+                "random"
+              ],
+              "description": "Type of pattern"
+            },
+            "interval": {
+              "type": "number",
+              "minimum": 100,
+              "description": "Interval between repetitions (for repeating patterns)"
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 100,
+              "description": "Duration of the pattern"
+            },
+            "elements": {
+              "type": "array",
+              "description": "Elements in the pattern",
+              "items": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "spawnCoin",
+                      "spawnSpike",
+                      "spawnStair",
+                      "spawnPortal",
+                      "spawnOrangeOrb",
+                      "spawnGreenOrb",
+                      "spawnAsteroid",
+                      "spawnGreenPortal",
+                      "spawnCeilingSpike"
+                    ]
+                  },
+                  "params": {
+                    "type": "object"
+                  },
+                  "delay": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Delay relative to pattern start"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "flyingModeConfig": {
+      "type": "object",
+      "description": "Configuration for flying mode",
+      "properties": {
+        "asteroidSpawnRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "asteroidSizes": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 10,
+            "maximum": 200
+          }
+        },
+        "asteroidZones": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "top",
+              "middle",
+              "bottom"
+            ]
+          }
+        },
+        "coinSpawnRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "upDownModeConfig": {
+      "type": "object",
+      "description": "Configuration for up-down mode",
+      "properties": {
+        "duration": {
+          "type": "number",
+          "minimum": 5000,
+          "description": "Duration of up-down mode in milliseconds"
+        },
+        "transitionTime": {
+          "type": "number",
+          "minimum": 200,
+          "maximum": 2000,
+          "description": "Time to transition between ground and ceiling"
+        },
+        "spikeSpawnRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Rate of spike spawning"
+        },
+        "coinSpawnRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Rate of coin spawning"
+        },
+        "groundCeilingRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Ratio of ground vs ceiling spikes (0.5 = equal)"
+        }
+      }
+    }
+  }
+}

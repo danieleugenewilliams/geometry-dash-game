@@ -4,6 +4,30 @@ const path = require('path');
 
 const PORT = 3000;
 
+// Level validation schema (simplified for server-side)
+function validateLevel(levelData) {
+    const required = ['levelId', 'name', 'duration', 'victoryCondition', 'timeline'];
+    for (const field of required) {
+        if (!levelData[field]) {
+            throw new Error(`Missing required field: ${field}`);
+        }
+    }
+    
+    if (!levelData.levelId.match(/^level-[0-9]+$/)) {
+        throw new Error('Invalid levelId format. Must be level-X where X is a number.');
+    }
+    
+    if (typeof levelData.duration !== 'number' || levelData.duration < 1000) {
+        throw new Error('Duration must be a number >= 1000');
+    }
+    
+    if (!Array.isArray(levelData.timeline)) {
+        throw new Error('Timeline must be an array');
+    }
+    
+    return true;
+}
+
 const server = http.createServer((req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -81,6 +105,86 @@ const server = http.createServer((req, res) => {
             }
         });
         
+    } else if (req.url === '/api/levels' && req.method === 'GET') {
+        // List all available levels
+        const levelsDir = path.join(__dirname, 'levels');
+        
+        fs.readdir(levelsDir, (err, files) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to read levels directory' }));
+                return;
+            }
+            
+            const levelFiles = files.filter(file => file.endsWith('.json') && file !== 'schema.json');
+            const levels = [];
+            
+            let processed = 0;
+            
+            if (levelFiles.length === 0) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify([]));
+                return;
+            }
+            
+            levelFiles.forEach(file => {
+                const filePath = path.join(levelsDir, file);
+                fs.readFile(filePath, 'utf8', (err, data) => {
+                    if (!err) {
+                        try {
+                            const levelData = JSON.parse(data);
+                            levels.push({
+                                levelId: levelData.levelId,
+                                name: levelData.name,
+                                description: levelData.description,
+                                difficulty: levelData.difficulty,
+                                duration: levelData.duration
+                            });
+                        } catch (parseErr) {
+                            console.error(`Error parsing level file ${file}:`, parseErr);
+                        }
+                    }
+                    
+                    processed++;
+                    if (processed === levelFiles.length) {
+                        // Sort levels by levelId
+                        levels.sort((a, b) => {
+                            const aNum = parseInt(a.levelId.split('-')[1]);
+                            const bNum = parseInt(b.levelId.split('-')[1]);
+                            return aNum - bNum;
+                        });
+                        
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(levels));
+                    }
+                });
+            });
+        });
+        
+    } else if (req.url.startsWith('/api/levels/') && req.method === 'GET') {
+        // Get specific level
+        const levelId = req.url.split('/').pop();
+        const filePath = path.join(__dirname, 'levels', `${levelId}.json`);
+        
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Level not found' }));
+                return;
+            }
+            
+            try {
+                const levelData = JSON.parse(data);
+                validateLevel(levelData);
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(levelData));
+            } catch (parseErr) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid level file: ' + parseErr.message }));
+            }
+        });
+        
     } else if (req.url === '/' || req.url === '/index.html') {
         // Serve the HTML file
         const filePath = path.join(__dirname, 'index.html');
@@ -96,8 +200,27 @@ const server = http.createServer((req, res) => {
         });
         
     } else {
-        res.writeHead(404);
-        res.end('Not found');
+        // Serve static files (CSS, JS, etc.)
+        const filePath = path.join(__dirname, req.url);
+        const ext = path.extname(filePath);
+        
+        // Set content type based on file extension
+        let contentType = 'text/plain';
+        if (ext === '.css') contentType = 'text/css';
+        else if (ext === '.js') contentType = 'application/javascript';
+        else if (ext === '.json') contentType = 'application/json';
+        else if (ext === '.html') contentType = 'text/html';
+        
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end('Not found');
+                return;
+            }
+            
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(data);
+        });
     }
 });
 

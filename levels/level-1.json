@@ -1,0 +1,224 @@
+{
+  "levelId": "level-1",
+  "name": "Coin Rush",
+  "description": "Master jumping and timing while collecting coins and avoiding spikes",
+  "difficulty": "easy",
+  "duration": 45000,
+  "victoryCondition": {
+    "type": "survival",
+    "target": 45000
+  },
+  "timeline": [
+    {
+      "time": 1000,
+      "action": "spawnCoin",
+      "params": { "x": 400, "y": 300 }
+    },
+    {
+      "time": 2500,
+      "action": "spawnCoin",
+      "params": { "x": 600, "y": 250 }
+    },
+    {
+      "time": 4000,
+      "action": "spawnCoin",
+      "params": { "x": 800, "y": 280 }
+    },
+    {
+      "time": 5500,
+      "action": "spawnSpike",
+      "params": { "x": 1000, "y": 330 }
+    },
+    {
+      "time": 6000,
+      "action": "spawnCoin",
+      "params": { "x": 1100, "y": 250 }
+    },
+    {
+      "time": 7500,
+      "action": "spawnCoin",
+      "params": { "x": 1300, "y": 280 }
+    },
+    {
+      "time": 8000,
+      "action": "spawnSpike",
+      "params": { "x": 1400, "y": 330 }
+    },
+    {
+      "time": 9000,
+      "action": "spawnCoin",
+      "params": { "x": 1600, "y": 200 }
+    },
+    {
+      "time": 10500,
+      "action": "spawnStair",
+      "params": { "x": 1800, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 11000,
+      "action": "spawnCoin",
+      "params": { "x": 1900, "y": 200 }
+    },
+    {
+      "time": 12500,
+      "action": "spawnCoin",
+      "params": { "x": 2100, "y": 250 }
+    },
+    {
+      "time": 13000,
+      "action": "spawnSpike",
+      "params": { "x": 2200, "y": 330 }
+    },
+    {
+      "time": 14000,
+      "action": "spawnCoin",
+      "params": { "x": 2400, "y": 280 }
+    },
+    {
+      "time": 15500,
+      "action": "spawnSpike",
+      "params": { "x": 2600, "y": 330 }
+    },
+    {
+      "time": 16000,
+      "action": "spawnSpike",
+      "params": { "x": 2650, "y": 330 }
+    },
+    {
+      "time": 17000,
+      "action": "spawnCoin",
+      "params": { "x": 2800, "y": 200 }
+    },
+    {
+      "time": 18500,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 3000, "y": 280 }
+    },
+    {
+      "time": 19000,
+      "action": "spawnCoin",
+      "params": { "x": 3100, "y": 250 }
+    },
+    {
+      "time": 20000,
+      "action": "spawnCoin",
+      "params": { "x": 3300, "y": 280 }
+    },
+    {
+      "time": 21000,
+      "action": "spawnSpike",
+      "params": { "x": 3500, "y": 330 }
+    },
+    {
+      "time": 22500,
+      "action": "spawnCoin",
+      "params": { "x": 3700, "y": 250 }
+    },
+    {
+      "time": 23500,
+      "action": "spawnStair",
+      "params": { "x": 3900, "y": 250, "width": 80, "height": 100 }
+    },
+    {
+      "time": 24000,
+      "action": "spawnCoin",
+      "params": { "x": 4000, "y": 180 }
+    },
+    {
+      "time": 25500,
+      "action": "spawnCoin",
+      "params": { "x": 4200, "y": 280 }
+    },
+    {
+      "time": 26500,
+      "action": "spawnSpike",
+      "params": { "x": 4400, "y": 330 }
+    },
+    {
+      "time": 27000,
+      "action": "spawnSpike",
+      "params": { "x": 4450, "y": 330 }
+    },
+    {
+      "time": 27500,
+      "action": "spawnSpike",
+      "params": { "x": 4500, "y": 330 }
+    },
+    {
+      "time": 28500,
+      "action": "spawnCoin",
+      "params": { "x": 4700, "y": 200 }
+    },
+    {
+      "time": 30000,
+      "action": "spawnCoin",
+      "params": { "x": 4900, "y": 250 }
+    },
+    {
+      "time": 31500,
+      "action": "spawnCoin",
+      "params": { "x": 5100, "y": 280 }
+    },
+    {
+      "time": 32500,
+      "action": "spawnSpike",
+      "params": { "x": 5300, "y": 330 }
+    },
+    {
+      "time": 33000,
+      "action": "spawnCoin",
+      "params": { "x": 5400, "y": 250 }
+    },
+    {
+      "time": 34500,
+      "action": "spawnCoin",
+      "params": { "x": 5600, "y": 280 }
+    },
+    {
+      "time": 35500,
+      "action": "spawnStair",
+      "params": { "x": 5800, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 36000,
+      "action": "spawnCoin",
+      "params": { "x": 5900, "y": 200 }
+    },
+    {
+      "time": 37500,
+      "action": "spawnCoin",
+      "params": { "x": 6100, "y": 250 }
+    },
+    {
+      "time": 38500,
+      "action": "spawnSpike",
+      "params": { "x": 6300, "y": 330 }
+    },
+    {
+      "time": 39000,
+      "action": "spawnCoin",
+      "params": { "x": 6400, "y": 280 }
+    },
+    {
+      "time": 40500,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 6600, "y": 250 }
+    },
+    {
+      "time": 41500,
+      "action": "spawnCoin",
+      "params": { "x": 6800, "y": 280 }
+    },
+    {
+      "time": 42500,
+      "action": "spawnCoin",
+      "params": { "x": 7000, "y": 250 }
+    },
+    {
+      "time": 43500,
+      "action": "spawnCoin",
+      "params": { "x": 7200, "y": 280 }
+    }
+  ],
+  "patterns": {}
+}

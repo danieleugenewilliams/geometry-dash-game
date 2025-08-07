@@ -1,0 +1,305 @@
+{
+    "levelId": "level-4",
+    "name": "Toggle Challenge",
+    "description": "Master the art of switching between ground and ceiling to avoid dual-surface obstacles",
+    "difficulty": "medium-hard",
+    "duration": 50000,
+    "victoryCondition": {
+        "type": "survival",
+        "target": 50000
+    },
+    "timeline": [
+        {
+            "time": 1000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 400,
+                "y": 300
+            }
+        },
+        {
+            "time": 2500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 600,
+                "y": 330
+            }
+        },
+        {
+            "time": 4000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 800,
+                "y": 250
+            }
+        },
+        {
+            "time": 5500,
+            "action": "spawnStair",
+            "params": {
+                "x": 1000,
+                "y": 280,
+                "width": 60,
+                "height": 70
+            }
+        },
+        {
+            "time": 7000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 1200,
+                "y": 200
+            }
+        },
+        {
+            "time": 8500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 1400,
+                "y": 330
+            }
+        },
+        {
+            "time": 10000,
+            "action": "spawnOrangeOrb",
+            "params": {
+                "x": 1600,
+                "y": 280
+            }
+        },
+        {
+            "time": 12000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 1800,
+                "y": 250
+            }
+        },
+        {
+            "time": 13500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 2000,
+                "y": 330
+            }
+        },
+        {
+            "time": 15000,
+            "action": "spawnGreenPortal",
+            "params": {
+                "x": 2200,
+                "y": 230
+            }
+        },
+        {
+            "time": 18000,
+            "action": "spawnSpike",
+            "params": {
+                "x": 2600,
+                "y": 330
+            }
+        },
+        {
+            "time": 19000,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 2800,
+                "y": 50
+            }
+        },
+        {
+            "time": 20500,
+            "action": "spawnCoin",
+            "params": {
+                "x": 3000,
+                "y": 200
+            }
+        },
+        {
+            "time": 22000,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 3200,
+                "y": 50
+            }
+        },
+        {
+            "time": 23000,
+            "action": "spawnSpike",
+            "params": {
+                "x": 3300,
+                "y": 330
+            }
+        },
+        {
+            "time": 24500,
+            "action": "spawnCoin",
+            "params": {
+                "x": 3500,
+                "y": 150
+            }
+        },
+        {
+            "time": 26000,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 3700,
+                "y": 50
+            }
+        },
+        {
+            "time": 27000,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 3800,
+                "y": 50
+            }
+        },
+        {
+            "time": 28500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 4000,
+                "y": 330
+            }
+        },
+        {
+            "time": 30000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 4200,
+                "y": 100
+            }
+        },
+        {
+            "time": 31500,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 4400,
+                "y": 50
+            }
+        },
+        {
+            "time": 32500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 4500,
+                "y": 330
+            }
+        },
+        {
+            "time": 33500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 4600,
+                "y": 330
+            }
+        },
+        {
+            "time": 35000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 4800,
+                "y": 250
+            }
+        },
+        {
+            "time": 36500,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 5000,
+                "y": 50
+            }
+        },
+        {
+            "time": 37500,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 5100,
+                "y": 50
+            }
+        },
+        {
+            "time": 38500,
+            "action": "spawnCeilingSpike",
+            "params": {
+                "x": 5200,
+                "y": 50
+            }
+        },
+        {
+            "time": 40000,
+            "action": "spawnGreenOrb",
+            "params": {
+                "x": 5400,
+                "y": 150
+            }
+        },
+        {
+            "time": 42000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 5800,
+                "y": 280
+            }
+        },
+        {
+            "time": 43500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 6000,
+                "y": 330
+            }
+        },
+        {
+            "time": 45000,
+            "action": "spawnStair",
+            "params": {
+                "x": 6200,
+                "y": 250,
+                "width": 80,
+                "height": 100
+            }
+        },
+        {
+            "time": 46000,
+            "action": "spawnCoin",
+            "params": {
+                "x": 6350,
+                "y": 180
+            }
+        },
+        {
+            "time": 47500,
+            "action": "spawnSpike",
+            "params": {
+                "x": 6500,
+                "y": 330
+            }
+        },
+        {
+            "time": 48500,
+            "action": "spawnCoin",
+            "params": {
+                "x": 6700,
+                "y": 250
+            }
+        },
+        {
+            "time": 49500,
+            "action": "spawnCoin",
+            "params": {
+                "x": 6900,
+                "y": 280
+            }
+        }
+    ],
+    "upDownModeConfig": {
+        "duration": 25000,
+        "transitionTime": 800,
+        "spikeSpawnRate": 0.018,
+        "coinSpawnRate": 0.012,
+        "groundCeilingRatio": 0.6
+    },
+    "patterns": {}
+}
