@@ -139,6 +139,14 @@
         let lastOrbSpawnScore = 0;
         const INVINCIBILITY_DURATION = 5000; // 5 seconds
         const ORB_SPAWN_INTERVAL = 100; // Every 100 points
+        
+        // Green orb system
+        let greenOrbs = [];
+        let isSuperInvincible = false;
+        let superInvincibilityTimer = 0;
+        let lastGreenOrbSpawnScore = 0;
+        const SUPER_INVINCIBILITY_DURATION = 8000; // 8 seconds
+        const GREEN_ORB_SPAWN_INTERVAL = 1000; // Every 1000 points
 
         let gameOver = false;
         let score = 0;
@@ -213,6 +221,10 @@
             isInvincible = false;
             invincibilityTimer = 0;
             lastOrbSpawnScore = 0;
+            greenOrbs = [];
+            isSuperInvincible = false;
+            superInvincibilityTimer = 0;
+            lastGreenOrbSpawnScore = 0;
             score = 0;
             gameOver = false;
             gameOverTimer = 0;
@@ -676,12 +688,21 @@
         function drawJet(x, y, width, height) {
             ctx.save();
             
-            // Add invincibility glow effect
-            if (isInvincible) {
+            // Add invincibility glow effects
+            if (isSuperInvincible) {
+                // Green and blue flashing for super invincibility
+                const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+                ctx.shadowColor = flashRate === 0 ? '#00FF00' : '#0000FF';
+                ctx.shadowBlur = 20;
+                
+                if (flashRate === 0) {
+                    ctx.globalAlpha = 0.9;
+                }
+            } else if (isInvincible) {
+                // Orange orb invincibility effect
                 ctx.shadowColor = '#00FFFF';
                 ctx.shadowBlur = 15;
                 
-                // Flashing effect
                 const flashRate = Math.floor(invincibilityTimer / 100) % 2;
                 if (flashRate === 0) {
                     ctx.globalAlpha = 0.8;
@@ -708,8 +729,21 @@
             ctx.fillRect(x + width/3, y - 2, width/3, 2);
             ctx.fillRect(x + width/3, y + height, width/3, 2);
             
-            // Add invincibility outline
-            if (isInvincible) {
+            // Add invincibility outlines
+            if (isSuperInvincible) {
+                ctx.shadowBlur = 0;
+                const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+                ctx.strokeStyle = flashRate === 0 ? '#00FF00' : '#0000FF';
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = 1;
+                
+                ctx.beginPath();
+                ctx.moveTo(x + width, y + height/2);
+                ctx.lineTo(x, y);
+                ctx.lineTo(x, y + height);
+                ctx.closePath();
+                ctx.stroke();
+            } else if (isInvincible) {
                 ctx.shadowBlur = 0;
                 ctx.strokeStyle = '#00FFFF';
                 ctx.lineWidth = 2;
@@ -899,6 +933,165 @@
             
             return distance <= playerRadius + orbRadius;
         }
+        
+        // Green orb generation and management
+        function generateGreenOrb() {
+            const currentScore = Math.floor(score);
+            const greenOrbsToSpawn = Math.floor(currentScore / GREEN_ORB_SPAWN_INTERVAL) - Math.floor(lastGreenOrbSpawnScore / GREEN_ORB_SPAWN_INTERVAL);
+            
+            if (greenOrbsToSpawn > 0) {
+                lastGreenOrbSpawnScore = currentScore;
+                
+                let yPosition;
+                if (gameState === 'FLYING') {
+                    yPosition = 60 + Math.random() * (canvas.height - 120);
+                } else {
+                    yPosition = GROUND_HEIGHT - 90 - Math.random() * 120;
+                }
+                
+                const newGreenOrb = {
+                    x: canvas.width + 60,
+                    y: yPosition,
+                    width: 30,
+                    height: 30,
+                    rotation: 0,
+                    collected: false,
+                    pulseTimer: 0,
+                    sparkleTimer: 0
+                };
+                
+                // Basic collision avoidance
+                let validPosition = true;
+                
+                // Check collision with existing green orbs
+                for (let existing of greenOrbs) {
+                    const dx = newGreenOrb.x - existing.x;
+                    const dy = newGreenOrb.y - existing.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                // Check collision with orange orbs
+                for (let orb of orangeOrbs) {
+                    const dx = newGreenOrb.x - orb.x;
+                    const dy = newGreenOrb.y - orb.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 80) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                // Check collision with coins
+                for (let coin of coins) {
+                    const dx = newGreenOrb.x - coin.x;
+                    const dy = newGreenOrb.y - coin.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 70) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                // Check collision with obstacles in normal mode
+                if (validPosition && gameState === 'NORMAL') {
+                    for (let obstacle of obstacles) {
+                        if (checkCollision(newGreenOrb, obstacle)) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    
+                    for (let stair of stairs) {
+                        if (checkCollision(newGreenOrb, stair)) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (validPosition) {
+                    greenOrbs.push(newGreenOrb);
+                }
+            }
+        }
+        
+        function updateGreenOrbs() {
+            greenOrbs.forEach(orb => {
+                orb.x -= MOVE_SPEED;
+                orb.rotation += 0.08;
+                orb.pulseTimer += 0.15;
+                orb.sparkleTimer += 0.2;
+            });
+            
+            // Remove off-screen orbs
+            greenOrbs = greenOrbs.filter(orb => orb.x + orb.width > 0);
+        }
+        
+        function drawGreenOrb(orb) {
+            ctx.save();
+            ctx.translate(orb.x + orb.width/2, orb.y + orb.height/2);
+            ctx.rotate(orb.rotation);
+            
+            // Pulsing effect
+            const pulse = 1 + Math.sin(orb.pulseTimer) * 0.3;
+            ctx.scale(pulse, pulse);
+            
+            // Draw green orb with gradient
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, orb.width/2);
+            gradient.addColorStop(0, '#FFFFFF'); // White center
+            gradient.addColorStop(0.2, '#00FF00'); // Bright green
+            gradient.addColorStop(0.6, '#00CC00'); // Medium green
+            gradient.addColorStop(1, '#008800'); // Dark green edge
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, orb.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add intense glow effect
+            ctx.shadowColor = '#00FF00';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, orb.width/2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Add sparkle effects
+            ctx.shadowBlur = 0;
+            const sparkleOffset = Math.sin(orb.sparkleTimer) * 5;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(-orb.width/4 + sparkleOffset, -orb.width/4, orb.width/8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(orb.width/4 - sparkleOffset, orb.width/4, orb.width/10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function checkGreenOrbCollision(player, orb) {
+            const playerCenterX = player.x + player.width / 2;
+            const playerCenterY = player.y + player.height / 2;
+            const orbCenterX = orb.x + orb.width / 2;
+            const orbCenterY = orb.y + orb.height / 2;
+            
+            const distance = Math.sqrt(
+                Math.pow(playerCenterX - orbCenterX, 2) + 
+                Math.pow(playerCenterY - orbCenterY, 2)
+            );
+            
+            const playerRadius = Math.min(player.width, player.height) / 2;
+            const orbRadius = orb.width / 2;
+            
+            return distance <= playerRadius + orbRadius;
+        }
         function createSparkleParticles(x, y) {
             const particles = [];
             for (let i = 0; i < 8; i++) {
@@ -1011,7 +1204,7 @@
                     
                     // Check asteroid collisions
                     asteroids.forEach(asteroid => {
-                        if (checkCollision(player, asteroid) && !isInvincible) {
+                        if (checkCollision(player, asteroid) && !isInvincible && !isSuperInvincible) {
                             gameOver = true;
                             gameOverTimer = 0;
                             console.log('Asteroid collision detected! Game Over');
@@ -1089,7 +1282,7 @@
             // Update score
             score += 0.1;
             
-            // Update invincibility timer
+            // Update invincibility timers
             if (isInvincible) {
                 invincibilityTimer += 16;
                 if (invincibilityTimer >= INVINCIBILITY_DURATION) {
@@ -1098,9 +1291,21 @@
                 }
             }
             
+            if (isSuperInvincible) {
+                superInvincibilityTimer += 16;
+                if (superInvincibilityTimer >= SUPER_INVINCIBILITY_DURATION) {
+                    isSuperInvincible = false;
+                    superInvincibilityTimer = 0;
+                }
+            }
+            
             // Generate and update orange orbs
             generateOrangeOrb();
             updateOrangeOrbs();
+            
+            // Generate and update green orbs
+            generateGreenOrb();
+            updateGreenOrbs();
             
             // Check orange orb collisions
             orangeOrbs.forEach(orb => {
@@ -1130,8 +1335,37 @@
                 }
             });
             
+            // Check green orb collisions
+            greenOrbs.forEach(orb => {
+                if (!orb.collected && checkGreenOrbCollision(player, orb)) {
+                    orb.collected = true;
+                    isSuperInvincible = true;
+                    superInvincibilityTimer = 0;
+                    score += 100; // Big bonus for green orb
+                    
+                    // Create sparkle effect
+                    sparkles.push({
+                        x: orb.x + orb.width/2,
+                        y: orb.y + orb.height/2,
+                        particles: createSparkleParticles(orb.x + orb.width/2, orb.y + orb.height/2),
+                        timer: 0,
+                        maxTimer: 1500
+                    });
+                    
+                    // Add bonus notification
+                    bonusNotifications.push({
+                        x: orb.x + orb.width/2,
+                        y: orb.y - 20,
+                        text: 'SUPER INVINCIBLE +100',
+                        timer: 0,
+                        maxTimer: 2500
+                    });
+                }
+            });
+            
             // Remove collected orbs
             orangeOrbs = orangeOrbs.filter(orb => !orb.collected);
+            greenOrbs = greenOrbs.filter(orb => !orb.collected);
         }
 
         function updateNormalMode() {
@@ -1219,7 +1453,7 @@
 
             // Check collisions with spikes and stair sides
             obstacles.forEach(obstacle => {
-                if (obstacle.type === 'spike' && checkCollision(player, obstacle) && !isInvincible) {
+                if (obstacle.type === 'spike' && checkCollision(player, obstacle) && !isInvincible && !isSuperInvincible) {
                     gameOver = true;
                     gameOverTimer = 0;
                     console.log('Spike collision detected! Game Over');
@@ -1228,7 +1462,7 @@
 
             // Check stair side collisions (end game)
             stairs.forEach(stair => {
-                if (checkStairSideCollision(player, stair)) {
+                if (checkStairSideCollision(player, stair) && !isSuperInvincible) {
                     gameOver = true;
                     gameOverTimer = 0;
                     console.log('Stair side collision detected! Game Over');
@@ -1296,9 +1530,19 @@
             if (gameState === 'FLYING' || gameState === 'PORTAL_TRANSITION' || gameState === 'PORTAL_EXIT') {
                 drawJet(player.x, player.y, player.width, player.height);
             } else {
-                // Normal player with invincibility effect
-                if (isInvincible) {
-                    // Flashing effect during invincibility
+                // Normal player with invincibility effects
+                if (isSuperInvincible) {
+                    // Green and blue flashing effect for super invincibility
+                    const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+                    ctx.fillStyle = flashRate === 0 ? 'rgba(0, 255, 0, 0.8)' : 'rgba(0, 0, 255, 0.8)';
+                    
+                    // Draw intense glowing outline
+                    ctx.shadowColor = flashRate === 0 ? '#00FF00' : '#0000FF';
+                    ctx.shadowBlur = 15;
+                    ctx.fillRect(player.x - 3, player.y - 3, player.width + 6, player.height + 6);
+                    ctx.shadowBlur = 0;
+                } else if (isInvincible) {
+                    // Orange invincibility effect
                     const flashRate = Math.floor(invincibilityTimer / 100) % 2;
                     ctx.fillStyle = flashRate === 0 ? 'rgba(0, 0, 255, 0.7)' : 'rgba(255, 255, 255, 0.9)';
                     
@@ -1366,6 +1610,11 @@
             orangeOrbs.forEach(orb => {
                 drawOrangeOrb(orb);
             });
+            
+            // Draw green orbs
+            greenOrbs.forEach(orb => {
+                drawGreenOrb(orb);
+            });
 
             // Draw sparkles
             drawSparkles();
@@ -1394,20 +1643,28 @@
                 ctx.fillText(`Flying: ${timeLeft}s`, 10, 75);
             }
             
-            // Draw invincibility timer
-            if (isInvincible) {
+            // Draw invincibility timers
+            let invincibilityYOffset = 0;
+            if (isSuperInvincible) {
+                const timeLeft = Math.ceil((SUPER_INVINCIBILITY_DURATION - superInvincibilityTimer) / 1000);
+                const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+                ctx.fillStyle = flashRate === 0 ? '#00FF00' : '#0000FF';
+                ctx.font = '20px Arial';
+                ctx.fillText(`SUPER INVINCIBLE: ${timeLeft}s`, 10, gameState === 'FLYING' ? 95 : 75);
+                invincibilityYOffset = 25;
+            } else if (isInvincible) {
                 const timeLeft = Math.ceil((INVINCIBILITY_DURATION - invincibilityTimer) / 1000);
                 ctx.fillStyle = '#00FFFF';
                 ctx.font = '18px Arial';
                 const protectionType = gameState === 'FLYING' ? 'ASTEROID SHIELD' : 'SPIKE SHIELD';
                 ctx.fillText(`${protectionType}: ${timeLeft}s`, 10, gameState === 'FLYING' ? 95 : 75);
+                invincibilityYOffset = 20;
             }
 
             // Draw auto replay status
             ctx.fillStyle = gameState === 'FLYING' ? 'white' : (autoReplay ? 'green' : 'gray');
             ctx.font = '16px Arial';
-            const yOffset = isInvincible ? 20 : 0;
-            ctx.fillText(`Auto Replay: ${autoReplay ? 'ON' : 'OFF'}`, 10, 95 + yOffset);
+            ctx.fillText(`Auto Replay: ${autoReplay ? 'ON' : 'OFF'}`, 10, 95 + invincibilityYOffset);
 
             // Draw pause status
             if (isPaused) {
