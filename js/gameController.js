@@ -13,6 +13,9 @@ class GameController {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // Make canvas responsive
+        this.setupCanvasResize();
+        
         // Initialize player
         this.player = new Player();
         window.player = this.player; // For compatibility with existing code
@@ -32,6 +35,58 @@ class GameController {
         
         // Load initial data
         this.loadInitialData();
+    }
+    
+    setupCanvasResize() {
+        const resizeCanvas = () => {
+            const scale = window.devicePixelRatio || 1;
+            
+            // Store display dimensions
+            if (window.innerWidth <= 768) {
+                this.displayWidth = window.innerWidth - 20;
+                this.displayHeight = window.innerHeight * 0.5;
+            } else {
+                this.displayWidth = 800;
+                this.displayHeight = 400;
+            }
+            
+            // Calculate ground as a fixed ratio of canvas height
+            // Keep ground at bottom 12.5% of screen (like original 50px out of 400px)
+            const groundThickness = this.displayHeight * 0.125;
+            this.groundHeight = this.displayHeight - groundThickness;
+            
+            // Update global ground values
+            window.GROUND_HEIGHT = this.groundHeight;
+            window.GROUND_Y = this.groundHeight - GAME_CONFIG.PLAYER_SIZE;
+            
+            console.log('Ground calc:', {
+                displayHeight: this.displayHeight,
+                groundHeight: this.groundHeight,
+                groundThickness: groundThickness,
+                GROUND_Y: window.GROUND_Y
+            });
+            
+            // Set canvas display size
+            this.canvas.style.width = this.displayWidth + 'px';
+            this.canvas.style.height = this.displayHeight + 'px';
+            
+            // Set actual canvas size for high DPI displays
+            this.canvas.width = this.displayWidth * scale;
+            this.canvas.height = this.displayHeight * scale;
+            this.ctx.scale(scale, scale);
+            
+            // Reset player position if game has started
+            if (this.player && window.gameStarted) {
+                this.player.y = getCurrentGroundY();
+                console.log('Player repositioned to:', this.player.y);
+            }
+            
+            // Reposition all existing obstacles and entities
+            this.repositionExistingEntities();
+        };
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial setup
     }
     
     initializeGameState() {
@@ -100,9 +155,17 @@ class GameController {
         this.canvas.focus();
         this.canvas.addEventListener('click', () => this.canvas.focus());
         
-        // Handle input
+        // Handle keyboard input
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+        
+        // Handle touch input for mobile
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        document.addEventListener('touchstart', (e) => this.handleDocumentTouchStart(e));
+        
+        // Prevent default touch behaviors
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
         
         // High score popup events
         document.addEventListener('keydown', (e) => {
@@ -147,10 +210,10 @@ class GameController {
             window.spaceKeyPressed = true;
         }
         
-        // Jump controls (only when game is running and in normal mode)
-        if ((e.code === 'Space' || e.code === 'ArrowUp') && !this.player.isJumping && 
-            !window.gameOver && !window.isPaused && window.gameState === GAME_STATES.NORMAL && window.gameStarted) {
-            this.player.jump();
+        // Jump controls (when game is running)
+        if ((e.code === 'Space' || e.code === 'ArrowUp') && 
+            !window.gameOver && !window.isPaused && window.gameStarted) {
+            this.handleJumpInput();
         }
         
         // Toggle auto replay
@@ -184,6 +247,65 @@ class GameController {
     handleKeyUp(e) {
         if (e.code === 'Space') {
             window.spaceKeyPressed = false;
+        }
+    }
+    
+    handleTouchStart(e) {
+        e.preventDefault();
+        console.log('Touch start on canvas');
+        
+        // Treat touch as space key press
+        if (!window.spaceKeyPressed) {
+            window.spaceKeyPressed = true;
+            
+            // Handle same logic as space key
+            if (!window.gameStarted || (window.gameOver && !document.getElementById('highScorePopup').style.display === 'block')) {
+                showLevelSelectMenu();
+                return;
+            }
+            
+            // Handle jumping/mode switching
+            this.handleJumpInput();
+        }
+    }
+    
+    handleTouchEnd(e) {
+        e.preventDefault();
+        window.spaceKeyPressed = false;
+    }
+    
+    handleDocumentTouchStart(e) {
+        // Handle touches on level selection menu
+        if (document.getElementById('levelSelectMenu').style.display === 'block') {
+            // Touch events on level cards are handled by onclick
+            return;
+        }
+    }
+    
+    handleJumpInput() {
+        const currentTime = Date.now();
+        
+        if (window.gameState === GAME_STATES.UP_DOWN && 
+            currentTime - window.lastSpacePress > UP_DOWN_CONFIG.SWITCH_COOLDOWN) {
+            
+            // Toggle between ground and ceiling
+            if (window.playerPosition === PLAYER_POSITIONS.GROUND) {
+                window.playerPosition = PLAYER_POSITIONS.CEILING;
+                window.transitionStartY = this.player.y;
+                window.transitionTargetY = UP_DOWN_CONFIG.CEILING_Y;
+                window.transitionTimer = 0;
+            } else {
+                window.playerPosition = PLAYER_POSITIONS.GROUND;
+                window.transitionStartY = this.player.y;
+                window.transitionTargetY = getCurrentGroundY();
+                window.transitionTimer = 0;
+            }
+            
+            window.lastSpacePress = currentTime;
+            console.log('Position switched to:', window.playerPosition);
+        } else if (window.gameState === GAME_STATES.NORMAL) {
+            // Normal jumping
+            this.player.jump();
         }
     }
     
@@ -236,7 +358,7 @@ class GameController {
                 if (window.flyingTimer >= GAME_CONFIG.FLYING_DURATION) {
                     window.gameState = GAME_STATES.NORMAL;
                     this.player.transformToSquare();
-                    this.player.y = GROUND_Y;
+                    this.player.y = getCurrentGroundY();
                 }
                 break;
             case GAME_STATES.GREEN_PORTAL_TRANSITION:
@@ -247,7 +369,7 @@ class GameController {
                 if (window.upDownTimer >= GAME_CONFIG.UP_DOWN_DURATION) {
                     window.gameState = GAME_STATES.NORMAL;
                     window.playerPosition = PLAYER_POSITIONS.GROUND;
-                    this.player.y = GROUND_Y;
+                    this.player.y = getCurrentGroundY();
                 }
                 break;
         }
@@ -306,7 +428,7 @@ class GameController {
             window.transitionTargetY = GAME_CONFIG.CEILING_Y;
             window.playerPosition = PLAYER_POSITIONS.TRANSITIONING;
         } else if (window.playerPosition === PLAYER_POSITIONS.CEILING) {
-            window.transitionTargetY = GROUND_Y;
+            window.transitionTargetY = (window.GROUND_Y || GROUND_Y);
             window.playerPosition = PLAYER_POSITIONS.TRANSITIONING;
         }
     }
@@ -559,11 +681,11 @@ class GameController {
     
     draw() {
         // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         
-        // Draw ground
-        this.ctx.fillStyle = '#4CAF50';
-        this.ctx.fillRect(0, GAME_CONFIG.GROUND_HEIGHT, this.canvas.width, 50);
+        // Draw background
+        this.ctx.fillStyle = '#f0f0f0';
+        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, this.displayHeight - this.groundHeight);
         
         // Draw all entities
         drawAllEntities(this.ctx);
@@ -596,20 +718,30 @@ class GameController {
         // Draw invincibility status
         if (window.isSuperInvincible) {
             this.ctx.fillStyle = 'green';
-            this.ctx.fillText('SUPER INVINCIBLE', this.canvas.width - 200, 30);
+            this.ctx.fillText('SUPER INVINCIBLE', this.displayWidth - 200, 30);
         } else if (window.isInvincible) {
             this.ctx.fillStyle = 'orange';
-            this.ctx.fillText('INVINCIBLE', this.canvas.width - 150, 30);
+            this.ctx.fillText('INVINCIBLE', this.displayWidth - 150, 30);
         }
         
         // Draw pause indicator
         if (window.isPaused) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '48px Arial';
+            
+            // Responsive font size based on display width
+            const pauseFontSize = Math.max(24, Math.min(48, this.displayWidth / 16));
+            this.ctx.font = `${pauseFontSize}px Arial`;
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.fillText('PAUSED', this.displayWidth / 2, this.displayHeight / 2);
+            
+            // Mobile instructions
+            if (this.displayWidth <= 500) {
+                this.ctx.font = `${pauseFontSize * 0.4}px Arial`;
+                this.ctx.fillText('Tap to resume', this.displayWidth / 2, this.displayHeight / 2 + pauseFontSize);
+            }
+            
             this.ctx.textAlign = 'left';
             this.ctx.font = '20px Arial';
         }
@@ -617,13 +749,27 @@ class GameController {
         // Draw game over screen
         if (window.gameOver) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '48px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 50);
-            this.ctx.font = '24px Arial';
-            this.ctx.fillText(`Final Score: ${Math.floor(window.score)}`, this.canvas.width / 2, this.canvas.height / 2);
+            
+            // Responsive font sizes based on display width
+            const gameOverFontSize = Math.max(24, Math.min(48, this.displayWidth / 16));
+            const scoreFontSize = Math.max(16, Math.min(24, this.displayWidth / 24));
+            const instructionFontSize = Math.max(12, Math.min(18, this.displayWidth / 32));
+            
+            this.ctx.font = `${gameOverFontSize}px Arial`;
+            this.ctx.fillText('GAME OVER', this.displayWidth / 2, this.displayHeight / 2 - gameOverFontSize);
+            
+            this.ctx.font = `${scoreFontSize}px Arial`;
+            this.ctx.fillText(`Final Score: ${Math.floor(window.score)}`, this.displayWidth / 2, this.displayHeight / 2);
+            
+            // Mobile instructions
+            if (this.displayWidth <= 500) {
+                this.ctx.font = `${instructionFontSize}px Arial`;
+                this.ctx.fillText('Tap to continue', this.displayWidth / 2, this.displayHeight / 2 + scoreFontSize + 20);
+            }
+            
             this.ctx.textAlign = 'left';
             this.ctx.font = '20px Arial';
         }
@@ -631,15 +777,52 @@ class GameController {
         // Draw level complete screen
         if (window.levelComplete) {
             this.ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '48px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('LEVEL COMPLETE!', this.canvas.width / 2, this.canvas.height / 2 - 50);
-            this.ctx.font = '24px Arial';
-            this.ctx.fillText(`Score: ${Math.floor(window.score)}`, this.canvas.width / 2, this.canvas.height / 2);
+            
+            // Responsive font sizes based on display width
+            const completeFontSize = Math.max(20, Math.min(48, this.displayWidth / 16));
+            const scoreFontSize = Math.max(16, Math.min(24, this.displayWidth / 24));
+            
+            this.ctx.font = `${completeFontSize}px Arial`;
+            this.ctx.fillText('LEVEL COMPLETE!', this.displayWidth / 2, this.displayHeight / 2 - completeFontSize);
+            
+            this.ctx.font = `${scoreFontSize}px Arial`;
+            this.ctx.fillText(`Score: ${Math.floor(window.score)}`, this.displayWidth / 2, this.displayHeight / 2);
+            
             this.ctx.textAlign = 'left';
             this.ctx.font = '20px Arial';
+        }
+    }
+    
+    repositionExistingEntities() {
+        // Reposition obstacles to sit on new ground level
+        if (window.obstacles) {
+            window.obstacles.forEach(obstacle => {
+                if (obstacle.type === 'spike') {
+                    obstacle.y = window.GROUND_HEIGHT - obstacle.height;
+                } else {
+                    // Regular obstacles should also sit on ground
+                    obstacle.y = window.GROUND_HEIGHT - obstacle.height;
+                }
+            });
+        }
+        
+        // Reposition stairs
+        if (window.stairs) {
+            window.stairs.forEach(stair => {
+                stair.y = window.GROUND_HEIGHT - stair.height;
+            });
+        }
+        
+        // Reposition coins (keep them floating above ground)
+        if (window.coins) {
+            window.coins.forEach(coin => {
+                // Keep coins at proportional height above ground
+                const coinHeight = window.GROUND_HEIGHT - 80;
+                coin.y = Math.max(50, coinHeight);
+            });
         }
     }
     

@@ -10,7 +10,7 @@ function generateGreenOrb() {
         if (window.gameState === GAME_STATES.FLYING) {
             yPosition = 60 + Math.random() * (GAME_CONFIG.CANVAS_HEIGHT - 120);
         } else {
-            yPosition = GAME_CONFIG.GROUND_HEIGHT - 90 - Math.random() * 120;
+            yPosition = getCurrentGroundHeight() - 90 - Math.random() * 120;
         }
         
         const newGreenOrb = {
@@ -266,7 +266,7 @@ function updateGreenPortals() {
             window.transitionTimer = 0;
             // Keep player as square but prepare for up-down mode
             window.playerPosition = PLAYER_POSITIONS.GROUND;
-            window.player.y = GROUND_Y;
+            window.player.y = getCurrentGroundY();
         }
     });
     

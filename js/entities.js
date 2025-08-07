@@ -75,10 +75,10 @@ function generateCoins(gameState) {
             yPosition = 30 + Math.random() * (GAME_CONFIG.CANVAS_HEIGHT - 60);
         } else {
             const heightOptions = [
-                GAME_CONFIG.GROUND_HEIGHT - 30, // Ground level
-                GAME_CONFIG.GROUND_HEIGHT - 80, // Jump height
-                GAME_CONFIG.GROUND_HEIGHT - 130, // High jump height
-                GAME_CONFIG.GROUND_HEIGHT - 180  // Very high
+                getCurrentGroundHeight() - 30, // Ground level
+                getCurrentGroundHeight() - 80, // Jump height
+                getCurrentGroundHeight() - 130, // High jump height
+                getCurrentGroundHeight() - 180  // Very high
             ];
             yPosition = heightOptions[Math.floor(Math.random() * heightOptions.length)];
         }
@@ -196,7 +196,7 @@ function generateOrangeOrb() {
         if (window.gameState === GAME_STATES.FLYING) {
             yPosition = 50 + Math.random() * (GAME_CONFIG.CANVAS_HEIGHT - 100);
         } else {
-            yPosition = GAME_CONFIG.GROUND_HEIGHT - 80 - Math.random() * 100;
+            yPosition = getCurrentGroundHeight() - 80 - Math.random() * 100;
         }
         
         const newOrb = {

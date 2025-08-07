@@ -174,7 +174,7 @@ class LevelManager {
         console.log('SPAWNING COIN:', params);
         const coin = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 30,
+            y: params.y || getCurrentGroundHeight() - 30,
             width: 20,
             height: 20,
             rotation: 0,
@@ -189,11 +189,13 @@ class LevelManager {
         console.log('SPAWNING SPIKE:', params);
         const spike = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 20,
+            y: 0, // Will be calculated below
             width: 20,
             height: 20,
             type: 'spike'
         };
+        // Position spike so bottom sits on ground
+        spike.y = getCurrentGroundHeight() - spike.height;
         window.obstacles.push(spike);
         console.log('SPIKE ADDED. Total obstacles:', window.obstacles.length);
     }
@@ -201,7 +203,7 @@ class LevelManager {
     spawnStair(params) {
         const stair = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 50,
+            y: params.y || getCurrentGroundHeight() - 50,
             width: params.width || 60,
             height: params.height || 50,
             type: 'stair'
@@ -212,7 +214,7 @@ class LevelManager {
     spawnPortal(params) {
         const portal = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 120,
+            y: params.y || getCurrentGroundHeight() - 120,
             width: 80,
             height: 80,
             rotation: 0,
@@ -224,7 +226,7 @@ class LevelManager {
     spawnGreenPortal(params) {
         const greenPortal = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 120,
+            y: params.y || getCurrentGroundHeight() - 120,
             width: 80,
             height: 80,
             rotation: 0,
@@ -247,7 +249,7 @@ class LevelManager {
     spawnOrangeOrb(params) {
         const orb = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 80,
+            y: params.y || getCurrentGroundHeight() - 80,
             width: 25,
             height: 25,
             rotation: 0,
@@ -260,7 +262,7 @@ class LevelManager {
     spawnGreenOrb(params) {
         const orb = {
             x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
-            y: params.y || GAME_CONFIG.GROUND_HEIGHT - 90,
+            y: params.y || getCurrentGroundHeight() - 90,
             width: 30,
             height: 30,
             rotation: 0,

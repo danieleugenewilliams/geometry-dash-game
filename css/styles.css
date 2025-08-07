@@ -10,6 +10,31 @@ body {
     background-color: #333;
     font-family: Arial, sans-serif;
     color: white;
+    overflow-x: hidden;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 20px auto;
+    border: 1px solid black;
+    background-color: #f0f0f0;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        margin: 0;
+        padding: 10px;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        max-width: 100vw;
+        height: 50vh;
+        margin: 10px auto;
+    }
 }
 
 #gameCanvas {
@@ -29,6 +54,26 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     text-align: center;
+    width: 90%;
+    max-width: 400px;
+}
+
+@media (max-width: 768px) {
+    #highScorePopup {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    #highScorePopup input {
+        width: 80%;
+        font-size: 14px;
+        padding: 8px;
+    }
+    
+    #highScorePopup button {
+        font-size: 14px;
+        padding: 8px 15px;
+    }
 }
 
 #highScorePopup h2 {
@@ -85,6 +130,52 @@ body {
     font-family: Arial, sans-serif;
     width: 80%;
     max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    #levelSelectMenu {
+        width: 95%;
+        padding: 20px;
+        max-height: 95vh;
+    }
+    
+    #levelSelectMenu h1 {
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+    
+    #levelSelectMenu h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .level-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .level-card {
+        padding: 15px;
+    }
+    
+    .level-card h3 {
+        font-size: 18px;
+    }
+    
+    .level-card p {
+        font-size: 13px;
+    }
+    
+    .endless-mode {
+        grid-column: span 1;
+    }
+    
+    .menu-footer {
+        font-size: 12px;
+    }
 }
 
 #levelSelectMenu h1 {
@@ -159,4 +250,18 @@ body {
     margin-top: 20px;
     font-size: 14px;
     color: #cccccc;
+}
+
+.mobile-instructions {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .desktop-instructions {
+        display: none;
+    }
+    
+    .mobile-instructions {
+        display: block;
+    }
 }

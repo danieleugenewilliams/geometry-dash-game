@@ -10,7 +10,7 @@ const GAME_CONFIG = {
     JUMP_FORCE: -15,
     MOVE_SPEED: 5,
     
-    // World dimensions
+    // World dimensions - these will be updated dynamically
     GROUND_HEIGHT: 350, // canvas.height - 50
     CEILING_Y: 50,
     
@@ -39,6 +39,16 @@ const GAME_CONFIG = {
     TARGET_FPS: 60,
     FRAME_TIME: 16 // ~60fps
 };
+
+// Helper function to get current ground height
+function getCurrentGroundHeight() {
+    return window.GROUND_HEIGHT || GAME_CONFIG.GROUND_HEIGHT;
+}
+
+// Helper function to get current ground Y (where player sits)
+function getCurrentGroundY() {
+    return window.GROUND_Y || (GAME_CONFIG.GROUND_HEIGHT - GAME_CONFIG.PLAYER_SIZE);
+}
 
 // Game state enums
 const GAME_STATES = {

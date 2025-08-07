@@ -6,7 +6,7 @@ class Player {
     
     reset() {
         this.x = 100;
-        this.y = GROUND_Y;
+        this.y = getCurrentGroundY();
         this.width = GAME_CONFIG.PLAYER_SIZE;
         this.height = GAME_CONFIG.PLAYER_SIZE;
         this.velocityY = 0;
@@ -27,8 +27,9 @@ class Player {
         this.y += this.velocityY;
         
         // Ground collision
-        if (this.y >= GROUND_Y) {
-            this.y = GROUND_Y;
+        const groundY = getCurrentGroundY();
+        if (this.y >= groundY) {
+            this.y = groundY;
             this.velocityY = 0;
             this.isJumping = false;
         }
