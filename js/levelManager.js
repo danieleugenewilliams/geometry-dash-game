@@ -414,3 +414,17 @@ async function loadAndStartLevel(levelId) {
         window.restartGame(); // Reset to endless mode
     }
 }
+
+// Expose functions to global scope for HTML onclick handlers
+window.selectLevel = selectLevel;
+window.showLevelSelectMenu = showLevelSelectMenu;
+window.hideLevelSelectMenu = hideLevelSelectMenu;
+window.loadAndStartLevel = loadAndStartLevel;
+
+// Debug: Verify functions are available
+console.log('Level manager functions exposed:', {
+    selectLevel: typeof window.selectLevel,
+    showLevelSelectMenu: typeof window.showLevelSelectMenu,
+    hideLevelSelectMenu: typeof window.hideLevelSelectMenu,
+    loadAndStartLevel: typeof window.loadAndStartLevel
+});

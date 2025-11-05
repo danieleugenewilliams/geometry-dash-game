@@ -15,7 +15,7 @@ const GAME_CONFIG = {
     CEILING_Y: 50,
     
     // Portal and flying constants
-    PORTAL_SPAWN_INTERVAL: 30000, // 30 seconds in milliseconds
+    PORTAL_SPAWN_INTERVAL: 500, // Every 500 points (reduced from 30000)
     FLYING_DURATION: 30000, // 30 seconds in flying mode
     FLYING_GRAVITY: 0.4,
     THRUST_FORCE: -0.5,

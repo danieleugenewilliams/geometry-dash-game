@@ -125,6 +125,8 @@ class GameController {
         window.isSuperInvincible = false;
         window.superInvincibilityTimer = 0;
         window.lastGreenOrbSpawnScore = 0;
+        window.lastPortalSpawnScore = 0;
+        window.lastGreenPortalSpawnScore = 0;
         
         // Game flow
         window.gameOver = false;
@@ -182,27 +184,9 @@ class GameController {
     }
     
     handleKeyDown(e) {
-        console.log('Key pressed:', e.code);
-        
-        // Handle menu navigation
-        if (document.getElementById('levelSelectMenu').style.display === 'block') {
-            if (e.code === 'Escape') {
-                hideLevelSelectMenu();
-                return;
-            }
-            if (e.code === 'Digit1') { selectLevel('level-1'); return; }
-            if (e.code === 'Digit2') { selectLevel('level-2'); return; }
-            if (e.code === 'Digit3') { selectLevel('level-3'); return; }
-            if (e.code === 'Digit4') { selectLevel('level-4'); return; }
-            if (e.code === 'KeyE') { selectLevel('endless'); return; }
-        }
-        
-        // Show menu if game hasn't started or after game over
-        if (!window.gameStarted || (window.gameOver && !document.getElementById('highScorePopup').style.display === 'block')) {
-            if (e.code === 'Enter' || e.code === 'Space') {
-                showLevelSelectMenu();
-                return;
-            }
+        // Prevent default behavior for game controls to stop page scrolling
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+            e.preventDefault();
         }
         
         // Track space key for flying mode
@@ -285,14 +269,14 @@ class GameController {
     handleJumpInput() {
         const currentTime = Date.now();
         
-        if (window.gameState === GAME_STATES.UP_DOWN && 
-            currentTime - window.lastSpacePress > UP_DOWN_CONFIG.SWITCH_COOLDOWN) {
+        if (window.gameState === GAME_STATES.UP_DOWN_MODE && 
+            currentTime - window.lastSpacePress > 200) {
             
             // Toggle between ground and ceiling
             if (window.playerPosition === PLAYER_POSITIONS.GROUND) {
                 window.playerPosition = PLAYER_POSITIONS.CEILING;
                 window.transitionStartY = this.player.y;
-                window.transitionTargetY = UP_DOWN_CONFIG.CEILING_Y;
+                window.transitionTargetY = GAME_CONFIG.CEILING_Y;
                 window.transitionTimer = 0;
             } else {
                 window.playerPosition = PLAYER_POSITIONS.GROUND;
@@ -643,6 +627,8 @@ class GameController {
         window.isSuperInvincible = false;
         window.superInvincibilityTimer = 0;
         window.lastGreenOrbSpawnScore = 0;
+        window.lastPortalSpawnScore = 0;
+        window.lastGreenPortalSpawnScore = 0;
         
         // Reset player position and transition states
         window.playerPosition = PLAYER_POSITIONS.GROUND;
@@ -683,9 +669,20 @@ class GameController {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         
-        // Draw background
-        this.ctx.fillStyle = '#f0f0f0';
-        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, this.displayHeight - this.groundHeight);
+        // Debug: Show that we are in the draw function
+        if (!window.gameStarted) {
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText('Game not started - Click to select level', 50, 200);
+            return;
+        }
+        
+        // Draw background (sky)
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.displayWidth, this.groundHeight);
+        
+        // Draw floor/ground with pattern
+        this.drawFloor();
         
         // Draw all entities
         drawAllEntities(this.ctx);
@@ -693,10 +690,28 @@ class GameController {
         // Draw player
         drawPlayer(this.ctx, this.player, window.gameState, window.isInvincible, 
                   window.isSuperInvincible, window.invincibilityTimer, 
-                  window.superInvincibilityTimer, window.spaceKeyPressed);
+                  window.superInvincibilityTimer);
         
         // Draw UI
         this.drawUI();
+    }
+    
+    drawFloor() {
+        // Draw main ground
+        this.ctx.fillStyle = '#8B4513';
+        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, this.displayHeight - this.groundHeight);
+        
+        // Draw grass line on top of ground
+        this.ctx.fillStyle = '#228B22';
+        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, 3);
+        
+        // Draw ground texture pattern
+        this.ctx.fillStyle = '#654321';
+        for (let x = 0; x < this.displayWidth; x += 40) {
+            for (let y = this.groundHeight + 10; y < this.displayHeight; y += 20) {
+                this.ctx.fillRect(x + 5, y, 30, 2);
+            }
+        }
     }
     
     drawUI() {
