@@ -272,21 +272,10 @@ class GameController {
         if (window.gameState === GAME_STATES.UP_DOWN_MODE && 
             currentTime - window.lastSpacePress > 200) {
             
-            // Toggle between ground and ceiling
-            if (window.playerPosition === PLAYER_POSITIONS.GROUND) {
-                window.playerPosition = PLAYER_POSITIONS.CEILING;
-                window.transitionStartY = this.player.y;
-                window.transitionTargetY = GAME_CONFIG.CEILING_Y;
-                window.transitionTimer = 0;
-            } else {
-                window.playerPosition = PLAYER_POSITIONS.GROUND;
-                window.transitionStartY = this.player.y;
-                window.transitionTargetY = getCurrentGroundY();
-                window.transitionTimer = 0;
-            }
-            
+            // Use the same toggle logic as handleUpDownMode
+            this.togglePlayerPosition();
             window.lastSpacePress = currentTime;
-            console.log('Position switched to:', window.playerPosition);
+            console.log('Position toggled from:', window.playerPosition === PLAYER_POSITIONS.TRANSITIONING ? 'transitioning' : window.playerPosition);
         } else if (window.gameState === GAME_STATES.NORMAL) {
             // Normal jumping
             this.player.jump();
