@@ -233,6 +233,141 @@
       "time": 58500,
       "action": "spawnCoin",
       "params": { "x": 9200, "y": 250 }
+    },
+    {
+      "time": 60000,
+      "action": "spawnSpike",
+      "params": { "x": 9500, "y": 330 }
+    },
+    {
+      "time": 60500,
+      "action": "spawnSpike",
+      "params": { "x": 9550, "y": 330 }
+    },
+    {
+      "time": 62000,
+      "action": "spawnCoin",
+      "params": { "x": 9850, "y": 200 }
+    },
+    {
+      "time": 63500,
+      "action": "spawnStair",
+      "params": { "x": 10150, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 64500,
+      "action": "spawnCoin",
+      "params": { "x": 10350, "y": 200 }
+    },
+    {
+      "time": 66000,
+      "action": "spawnPortal",
+      "params": { "x": 10650, "y": 230 }
+    },
+    {
+      "time": 68000,
+      "action": "spawnAsteroid",
+      "params": { "x": 11000, "y": 150, "size": 45 }
+    },
+    {
+      "time": 69000,
+      "action": "spawnCoin",
+      "params": { "x": 11200, "y": 200 }
+    },
+    {
+      "time": 70000,
+      "action": "spawnAsteroid",
+      "params": { "x": 11400, "y": 280, "size": 50 }
+    },
+    {
+      "time": 71000,
+      "action": "spawnAsteroid",
+      "params": { "x": 11600, "y": 100, "size": 40 }
+    },
+    {
+      "time": 72000,
+      "action": "spawnCoin",
+      "params": { "x": 11800, "y": 250 }
+    },
+    {
+      "time": 73000,
+      "action": "spawnAsteroid",
+      "params": { "x": 12000, "y": 200, "size": 55 }
+    },
+    {
+      "time": 74000,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 12200, "y": 150 }
+    },
+    {
+      "time": 75000,
+      "action": "spawnAsteroid",
+      "params": { "x": 12400, "y": 300, "size": 45 }
+    },
+    {
+      "time": 76000,
+      "action": "spawnAsteroid",
+      "params": { "x": 12600, "y": 120, "size": 50 }
+    },
+    {
+      "time": 77000,
+      "action": "spawnCoin",
+      "params": { "x": 12800, "y": 200 }
+    },
+    {
+      "time": 78000,
+      "action": "spawnAsteroid",
+      "params": { "x": 13000, "y": 250, "size": 40 }
+    },
+    {
+      "time": 80000,
+      "action": "spawnCoin",
+      "params": { "x": 13400, "y": 280 }
+    },
+    {
+      "time": 81500,
+      "action": "spawnSpike",
+      "params": { "x": 13700, "y": 330 }
+    },
+    {
+      "time": 83000,
+      "action": "spawnCoin",
+      "params": { "x": 14000, "y": 250 }
+    },
+    {
+      "time": 84500,
+      "action": "spawnStair",
+      "params": { "x": 14300, "y": 250, "width": 80, "height": 100 }
+    },
+    {
+      "time": 85500,
+      "action": "spawnCoin",
+      "params": { "x": 14500, "y": 180 }
+    },
+    {
+      "time": 87000,
+      "action": "spawnSpike",
+      "params": { "x": 14800, "y": 330 }
+    },
+    {
+      "time": 88000,
+      "action": "spawnSpike",
+      "params": { "x": 14900, "y": 330 }
+    },
+    {
+      "time": 89500,
+      "action": "spawnGreenOrb",
+      "params": { "x": 15200, "y": 280 }
+    },
+    {
+      "time": 91000,
+      "action": "spawnCoin",
+      "params": { "x": 15500, "y": 250 }
+    },
+    {
+      "time": 92500,
+      "action": "spawnCoin",
+      "params": { "x": 15800, "y": 280 }
     }
   ],
   "flyingModeConfig": {

@@ -2,7 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3000;
+const START_PORT = 3000;
+const MAX_PORT = 3010;
 
 // Level validation schema (simplified for server-side)
 function validateLevel(levelData) {
@@ -224,7 +225,23 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+let currentPort = START_PORT;
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${currentPort} in use, trying ${currentPort + 1}...`);
+        currentPort++;
+        if (currentPort > MAX_PORT) {
+            console.error(`Could not find available port between ${START_PORT} and ${MAX_PORT}`);
+            process.exit(1);
+        }
+        server.listen(currentPort);
+    } else {
+        throw err;
+    }
+});
+
+server.listen(currentPort, () => {
+    console.log(`Server running at http://localhost:${currentPort}`);
     console.log('High scores will be saved to high-scores.md');
 });

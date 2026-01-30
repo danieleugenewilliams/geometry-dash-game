@@ -218,6 +218,131 @@
       "time": 43500,
       "action": "spawnCoin",
       "params": { "x": 7200, "y": 280 }
+    },
+    {
+      "time": 44500,
+      "action": "spawnSpike",
+      "params": { "x": 7400, "y": 330 }
+    },
+    {
+      "time": 46000,
+      "action": "spawnCoin",
+      "params": { "x": 7700, "y": 250 }
+    },
+    {
+      "time": 47500,
+      "action": "spawnStair",
+      "params": { "x": 8000, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 48500,
+      "action": "spawnCoin",
+      "params": { "x": 8200, "y": 200 }
+    },
+    {
+      "time": 50000,
+      "action": "spawnSpike",
+      "params": { "x": 8500, "y": 330 }
+    },
+    {
+      "time": 51000,
+      "action": "spawnSpike",
+      "params": { "x": 8650, "y": 330 }
+    },
+    {
+      "time": 52500,
+      "action": "spawnCoin",
+      "params": { "x": 8900, "y": 280 }
+    },
+    {
+      "time": 54000,
+      "action": "spawnCoin",
+      "params": { "x": 9200, "y": 250 }
+    },
+    {
+      "time": 55500,
+      "action": "spawnOrangeOrb",
+      "params": { "x": 9500, "y": 280 }
+    },
+    {
+      "time": 57000,
+      "action": "spawnSpike",
+      "params": { "x": 9800, "y": 330 }
+    },
+    {
+      "time": 58000,
+      "action": "spawnCoin",
+      "params": { "x": 10000, "y": 200 }
+    },
+    {
+      "time": 59500,
+      "action": "spawnStair",
+      "params": { "x": 10300, "y": 250, "width": 80, "height": 100 }
+    },
+    {
+      "time": 60500,
+      "action": "spawnCoin",
+      "params": { "x": 10500, "y": 180 }
+    },
+    {
+      "time": 62000,
+      "action": "spawnSpike",
+      "params": { "x": 10800, "y": 330 }
+    },
+    {
+      "time": 63000,
+      "action": "spawnSpike",
+      "params": { "x": 10900, "y": 330 }
+    },
+    {
+      "time": 64500,
+      "action": "spawnCoin",
+      "params": { "x": 11200, "y": 280 }
+    },
+    {
+      "time": 66000,
+      "action": "spawnCoin",
+      "params": { "x": 11500, "y": 250 }
+    },
+    {
+      "time": 67500,
+      "action": "spawnSpike",
+      "params": { "x": 11800, "y": 330 }
+    },
+    {
+      "time": 69000,
+      "action": "spawnCoin",
+      "params": { "x": 12100, "y": 200 }
+    },
+    {
+      "time": 70500,
+      "action": "spawnStair",
+      "params": { "x": 12400, "y": 280, "width": 60, "height": 70 }
+    },
+    {
+      "time": 72000,
+      "action": "spawnCoin",
+      "params": { "x": 12700, "y": 250 }
+    },
+    {
+      "time": 73500,
+      "action": "spawnSpike",
+      "params": { "x": 13000, "y": 330 }
+    },
+    {
+      "time": 74500,
+      "action": "spawnSpike",
+      "params": { "x": 13100, "y": 330 }
+    },
+    {
+      "time": 76000,
+      "action": "spawnCoin",
+      "params": { "x": 13400, "y": 280 }
+    },
+    {
+      "time": 77500,
+      "action": "spawnCoin",
+      "params": { "x": 13700, "y": 250 }
     }
   ],
   "patterns": {}

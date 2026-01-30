@@ -117,6 +117,9 @@ class GameController {
         window.orangeOrbs = [];
         window.greenOrbs = [];
         window.bonusNotifications = [];
+
+        // Space background stars (generated once)
+        this.generateStars();
         
         // Power-up states
         window.isInvincible = false;
@@ -150,7 +153,49 @@ class GameController {
         // Functions for compatibility
         window.restartGame = this.restartGame.bind(this);
     }
-    
+
+    generateStars() {
+        // Generate random stars for space background
+        this.stars = [];
+        for (let i = 0; i < 100; i++) {
+            this.stars.push({
+                x: Math.random() * 800,
+                y: Math.random() * 400,
+                size: Math.random() * 2 + 1,
+                brightness: Math.random() * 0.5 + 0.5
+            });
+        }
+    }
+
+    drawSpaceBackground() {
+        // Dark space background
+        this.ctx.fillStyle = '#0a0a20';
+        this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+
+        // Draw stars
+        for (let star of this.stars) {
+            const scaledX = (star.x / 800) * this.displayWidth;
+            const scaledY = (star.y / 400) * this.displayHeight;
+            const twinkle = 0.7 + Math.sin(Date.now() / 500 + star.x) * 0.3;
+            const alpha = star.brightness * twinkle;
+
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            this.ctx.beginPath();
+            this.ctx.arc(scaledX, scaledY, star.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        // Add some distant galaxies/nebulae
+        const gradient = this.ctx.createRadialGradient(
+            this.displayWidth * 0.7, this.displayHeight * 0.3, 0,
+            this.displayWidth * 0.7, this.displayHeight * 0.3, 100
+        );
+        gradient.addColorStop(0, 'rgba(100, 50, 150, 0.2)');
+        gradient.addColorStop(1, 'rgba(100, 50, 150, 0)');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+    }
+
     setupEventListeners() {
         // Make canvas focusable
         this.canvas.tabIndex = 0;
@@ -332,6 +377,7 @@ class GameController {
                     window.gameState = GAME_STATES.NORMAL;
                     this.player.transformToSquare();
                     this.player.y = getCurrentGroundY();
+                    window.asteroids = [];
                 }
                 break;
             case GAME_STATES.GREEN_PORTAL_TRANSITION:
@@ -368,27 +414,32 @@ class GameController {
             this.togglePlayerPosition();
             window.lastSpacePress = Date.now();
         }
-        
+
         // Handle position transitions
         if (window.playerPosition === PLAYER_POSITIONS.TRANSITIONING) {
             window.transitionTimer += GAME_CONFIG.FRAME_TIME;
             const progress = Math.min(window.transitionTimer / GAME_CONFIG.TRANSITION_DURATION, 1);
-            
-            this.player.updateUpDown(window.playerPosition, progress, 
+
+            this.player.updateUpDown(window.playerPosition, progress,
                                    window.transitionStartY, window.transitionTargetY);
-            
+
             // Complete transition
             if (progress >= 1) {
                 this.player.y = window.transitionTargetY;
                 this.player.rotation = 0;
-                window.playerPosition = (window.transitionTargetY === GAME_CONFIG.CEILING_Y) ? 
+                window.playerPosition = (window.transitionTargetY === GAME_CONFIG.CEILING_Y) ?
                                       PLAYER_POSITIONS.CEILING : PLAYER_POSITIONS.GROUND;
                 window.transitionTimer = 0;
             }
         }
-        
-        // Continuous scoring in up-down mode
-        window.score += 0.1;
+
+        // Continuous scoring in up-down mode (2x if super invincible)
+        window.score += this.getScoreMultiplier(0.1);
+    }
+
+    // Helper function to apply score multiplier when super invincible
+    getScoreMultiplier(points) {
+        return window.isSuperInvincible ? points * 2 : points;
     }
     
     togglePlayerPosition() {
@@ -468,23 +519,22 @@ class GameController {
             }
         }
         
-        // Proximity bonuses for asteroids
+        // Proximity bonuses for asteroids - 5 points for close passes
         window.asteroids.forEach(asteroid => {
             const dx = this.player.getCenterX() - (asteroid.x + asteroid.width/2);
             const dy = this.player.getCenterY() - (asteroid.y + asteroid.height/2);
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const proximityThreshold = 80;
-            
+            const proximityThreshold = 60; // Close pass distance
+
             if (distance < proximityThreshold && !asteroid.bonusAwarded) {
-                const bonusMultiplier = Math.max(0.1, 1 - (distance / proximityThreshold));
-                const bonusPoints = bonusMultiplier * 2;
-                window.score += bonusPoints;
+                const bonus = this.getScoreMultiplier(5);
+                window.score += bonus;
                 asteroid.bonusAwarded = true;
-                
+
                 window.bonusNotifications.push({
                     x: asteroid.x + asteroid.width/2,
                     y: asteroid.y - 20,
-                    text: `+${Math.floor(bonusPoints)}`,
+                    text: `+${Math.floor(bonus)} CLOSE!`,
                     timer: 0,
                     maxTimer: 1000
                 });
@@ -497,8 +547,8 @@ class GameController {
         for (let coin of window.coins) {
             if (!coin.collected && checkCoinCollision(this.player, coin)) {
                 coin.collected = true;
-                window.score += 10;
-                
+                window.score += this.getScoreMultiplier(10);
+
                 // Add sparkle effect
                 window.sparkles.push({
                     x: coin.x + coin.width/2,
@@ -514,18 +564,18 @@ class GameController {
         for (let orb of window.orangeOrbs) {
             if (!orb.collected && checkOrbCollision(this.player, orb)) {
                 orb.collected = true;
-                window.score += 25;
+                window.score += this.getScoreMultiplier(25);
                 window.isInvincible = true;
                 window.invincibilityTimer = 0;
                 console.log('Orange orb collected! Invincible for 10 seconds');
             }
         }
-        
+
         // Check green orb collections
         for (let orb of window.greenOrbs) {
             if (!orb.collected && checkOrbCollision(this.player, orb)) {
                 orb.collected = true;
-                window.score += 100;
+                window.score += this.getScoreMultiplier(100);
                 window.isSuperInvincible = true;
                 window.superInvincibilityTimer = 0;
                 console.log('Green orb collected! Super invincible for 8 seconds');
@@ -553,11 +603,11 @@ class GameController {
             }
         }
         
-        // Continuous scoring based on game state
+        // Continuous scoring based on game state (2x if super invincible)
         if (window.gameState === GAME_STATES.NORMAL) {
-            window.score += 0.1;
+            window.score += this.getScoreMultiplier(0.1);
         } else if (window.gameState === GAME_STATES.FLYING) {
-            window.score += 0.15;
+            window.score += this.getScoreMultiplier(0.15);
         }
     }
     
@@ -666,12 +716,18 @@ class GameController {
             return;
         }
         
-        // Draw background (sky)
-        this.ctx.fillStyle = '#87CEEB';
-        this.ctx.fillRect(0, 0, this.displayWidth, this.groundHeight);
-        
-        // Draw floor/ground with pattern
-        this.drawFloor();
+        // Draw background based on game state
+        if (window.gameState === GAME_STATES.FLYING || window.gameState === GAME_STATES.PORTAL_TRANSITION) {
+            // Space background for flying mode
+            this.drawSpaceBackground();
+        } else {
+            // Normal sky background
+            this.ctx.fillStyle = '#87CEEB';
+            this.ctx.fillRect(0, 0, this.displayWidth, this.groundHeight);
+
+            // Draw floor/ground with pattern
+            this.drawFloor();
+        }
         
         // Draw all entities
         drawAllEntities(this.ctx);
@@ -722,7 +778,7 @@ class GameController {
         // Draw invincibility status
         if (window.isSuperInvincible) {
             this.ctx.fillStyle = 'green';
-            this.ctx.fillText('SUPER INVINCIBLE', this.displayWidth - 200, 30);
+            this.ctx.fillText('SUPER INVINCIBLE 2X', this.displayWidth - 220, 30);
         } else if (window.isInvincible) {
             this.ctx.fillStyle = 'orange';
             this.ctx.fillText('INVINCIBLE', this.displayWidth - 150, 30);

@@ -311,15 +311,16 @@ class LevelManager {
     completeLevel() {
         window.levelComplete = true;
         console.log('Level completed!');
-        
-        // Add completion bonus
-        window.score += 500;
-        
+
+        // Add completion bonus (2x if super invincible)
+        const bonus = window.isSuperInvincible ? 1000 : 500;
+        window.score += bonus;
+
         // Show completion notification
         window.bonusNotifications.push({
             x: GAME_CONFIG.CANVAS_WIDTH / 2,
             y: GAME_CONFIG.CANVAS_HEIGHT / 2,
-            text: `LEVEL COMPLETE! +500`,
+            text: `LEVEL COMPLETE! +${bonus}`,
             timer: 0,
             maxTimer: 3000
         });
