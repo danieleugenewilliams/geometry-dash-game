@@ -165,6 +165,9 @@ class LevelManager {
             case 'spawnCeilingSpike':
                 this.spawnCeilingSpike(event.params);
                 break;
+            case 'spawnRedPortal':
+                this.spawnRedPortal(event.params);
+                break;
             default:
                 console.warn('Unknown event action:', event.action);
         }
@@ -233,6 +236,18 @@ class LevelManager {
             particles: []
         };
         window.greenPortals.push(greenPortal);
+    }
+
+    spawnRedPortal(params) {
+        const redPortal = {
+            x: params.x || GAME_CONFIG.CANVAS_WIDTH + 20,
+            y: params.y || getCurrentGroundHeight() - 120,
+            width: 80,
+            height: 80,
+            rotation: 0,
+            particles: []
+        };
+        window.redPortals.push(redPortal);
     }
     
     spawnCeilingSpike(params) {

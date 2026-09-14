@@ -110,6 +110,7 @@ class GameController {
         window.stairs = [];
         window.portals = [];
         window.greenPortals = [];
+        window.redPortals = [];
         window.asteroids = [];
         window.ceilingSpikes = [];
         window.coins = [];
@@ -130,7 +131,9 @@ class GameController {
         window.lastGreenOrbSpawnScore = 0;
         window.lastPortalSpawnScore = 0;
         window.lastGreenPortalSpawnScore = 0;
-        
+        window.lastRedPortalSpawnScore = 0;
+        window.spiderTimer = 0;
+
         // Game flow
         window.gameOver = false;
         window.score = 0;
@@ -263,6 +266,7 @@ class GameController {
             if (e.code === 'Digit2') { loadAndStartLevel('level-2'); }
             if (e.code === 'Digit3') { loadAndStartLevel('level-3'); }
             if (e.code === 'Digit4') { loadAndStartLevel('level-4'); }
+            if (e.code === 'Digit5') { loadAndStartLevel('level-5'); }
             if (e.code === 'KeyE') {
                 window.gameMode = GAME_MODES.ENDLESS;
                 window.selectedLevelId = null;
@@ -313,14 +317,18 @@ class GameController {
     
     handleJumpInput() {
         const currentTime = Date.now();
-        
-        if (window.gameState === GAME_STATES.UP_DOWN_MODE && 
+
+        if (window.gameState === GAME_STATES.UP_DOWN_MODE &&
             currentTime - window.lastSpacePress > 200) {
-            
+
             // Use the same toggle logic as handleUpDownMode
             this.togglePlayerPosition();
             window.lastSpacePress = currentTime;
             console.log('Position toggled from:', window.playerPosition === PLAYER_POSITIONS.TRANSITIONING ? 'transitioning' : window.playerPosition);
+        } else if (window.gameState === GAME_STATES.SPIDER_MODE) {
+            // Spider mode - flip gravity
+            this.player.flipGravity();
+            console.log('Gravity flipped:', this.player.gravityFlipped ? 'UP' : 'DOWN');
         } else if (window.gameState === GAME_STATES.NORMAL) {
             // Normal jumping
             this.player.jump();
@@ -392,6 +400,20 @@ class GameController {
                     this.player.y = getCurrentGroundY();
                 }
                 break;
+            case GAME_STATES.RED_PORTAL_TRANSITION:
+                window.gameState = GAME_STATES.SPIDER_MODE;
+                break;
+            case GAME_STATES.SPIDER_MODE:
+                window.spiderTimer += GAME_CONFIG.FRAME_TIME;
+                if (window.spiderTimer >= GAME_CONFIG.SPIDER_DURATION) {
+                    window.gameState = GAME_STATES.NORMAL;
+                    this.player.transformToSquare();
+                    this.player.gravityFlipped = false;
+                    this.player.y = getCurrentGroundY();
+                    this.player.velocityY = 0;
+                    this.player.isJumping = false;
+                }
+                break;
         }
     }
     
@@ -405,6 +427,9 @@ class GameController {
                 break;
             case GAME_STATES.UP_DOWN_MODE:
                 this.handleUpDownMode();
+                break;
+            case GAME_STATES.SPIDER_MODE:
+                this.handleSpiderMode();
                 break;
         }
     }
@@ -438,6 +463,11 @@ class GameController {
         window.score += this.getScoreMultiplier(0.1);
     }
 
+    handleSpiderMode() {
+        // Update spider physics
+        this.player.updateSpider();
+    }
+
     // Helper function to apply score multiplier when super invincible
     getScoreMultiplier(points) {
         return window.isSuperInvincible ? points * 2 : points;
@@ -460,12 +490,12 @@ class GameController {
     
     checkCollisions() {
         // Check collisions with different entities based on game state
-        if (window.gameState === GAME_STATES.NORMAL || window.gameState === GAME_STATES.UP_DOWN_MODE) {
+        if (window.gameState === GAME_STATES.NORMAL || window.gameState === GAME_STATES.UP_DOWN_MODE || window.gameState === GAME_STATES.SPIDER_MODE) {
             this.checkNormalModeCollisions();
         } else if (window.gameState === GAME_STATES.FLYING) {
             this.checkFlyingModeCollisions();
         }
-        
+
         // Check coin and orb collections (all modes)
         this.checkCollectibles();
     }
@@ -488,8 +518,8 @@ class GameController {
                 }
             }
             
-            // Check ceiling spike collisions (up-down mode)
-            if (window.gameState === GAME_STATES.UP_DOWN_MODE) {
+            // Check ceiling spike collisions (up-down mode and spider mode)
+            if (window.gameState === GAME_STATES.UP_DOWN_MODE || window.gameState === GAME_STATES.SPIDER_MODE) {
                 for (let spike of window.ceilingSpikes) {
                     if (checkCollision(this.player, spike)) {
                         this.endGame();
@@ -609,6 +639,8 @@ class GameController {
             window.score += this.getScoreMultiplier(0.1);
         } else if (window.gameState === GAME_STATES.FLYING) {
             window.score += this.getScoreMultiplier(0.15);
+        } else if (window.gameState === GAME_STATES.SPIDER_MODE) {
+            window.score += this.getScoreMultiplier(0.12);
         }
     }
     
@@ -652,6 +684,7 @@ class GameController {
         window.stairs = [];
         window.portals = [];
         window.greenPortals = [];
+        window.redPortals = [];
         window.asteroids = [];
         window.ceilingSpikes = [];
         window.coins = [];
@@ -669,7 +702,9 @@ class GameController {
         window.lastGreenOrbSpawnScore = 0;
         window.lastPortalSpawnScore = 0;
         window.lastGreenPortalSpawnScore = 0;
-        
+        window.lastRedPortalSpawnScore = 0;
+        window.spiderTimer = 0;
+
         // Reset player position and transition states
         window.playerPosition = PLAYER_POSITIONS.GROUND;
         window.transitionTimer = 0;

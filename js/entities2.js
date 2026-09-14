@@ -330,6 +330,135 @@ function drawGreenPortal(ctx, portal) {
     ctx.restore();
 }
 
+// === RED PORTAL SYSTEM (Spider Mode) ===
+function generateRedPortals() {
+    const currentScore = Math.floor(window.score);
+    const redPortalsToSpawn = Math.floor(currentScore / (GAME_CONFIG.PORTAL_SPAWN_INTERVAL * 2)) - Math.floor(window.lastRedPortalSpawnScore / (GAME_CONFIG.PORTAL_SPAWN_INTERVAL * 2));
+
+    if (redPortalsToSpawn > 0) {
+        window.lastRedPortalSpawnScore = currentScore;
+
+        const redPortal = {
+            x: GAME_CONFIG.CANVAS_WIDTH + 100,
+            y: getCurrentGroundHeight() - 120,
+            width: 80,
+            height: 80,
+            rotation: 0,
+            particles: []
+        };
+
+        // Basic collision avoidance
+        let validPosition = true;
+
+        // Check collision with existing red portals
+        for (let existing of window.redPortals) {
+            if (Math.abs(redPortal.x - existing.x) < 200) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        // Check collision with regular portals
+        for (let existing of window.portals) {
+            if (Math.abs(redPortal.x - existing.x) < 200) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        // Check collision with green portals
+        for (let existing of window.greenPortals) {
+            if (Math.abs(redPortal.x - existing.x) < 200) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        // Check collision with stairs and obstacles
+        for (let stair of window.stairs) {
+            if (Math.abs(redPortal.x - stair.x) < 120) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        for (let obstacle of window.obstacles) {
+            if (Math.abs(redPortal.x - obstacle.x) < 120) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        if (validPosition) {
+            window.redPortals.push(redPortal);
+        }
+    }
+}
+
+function updateRedPortals() {
+    window.redPortals.forEach(portal => {
+        portal.x -= GAME_CONFIG.MOVE_SPEED;
+        portal.rotation += 0.1;
+
+        // Check collision with player
+        if (checkCollision(window.player, portal) && window.gameState === GAME_STATES.NORMAL) {
+            window.gameState = GAME_STATES.RED_PORTAL_TRANSITION;
+            window.spiderTimer = 0;
+            // Transform player to spider
+            window.player.transformToSpider();
+        }
+    });
+
+    // Remove off-screen red portals
+    window.redPortals = window.redPortals.filter(portal => portal.x + portal.width > 0);
+}
+
+function drawRedPortal(ctx, portal) {
+    ctx.save();
+    ctx.translate(portal.x + portal.width/2, portal.y + portal.height/2);
+    ctx.rotate(portal.rotation);
+
+    // Draw red portal circle with gradient
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, portal.width/2);
+    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.9)');
+    gradient.addColorStop(0.5, 'rgba(139, 0, 0, 0.7)');
+    gradient.addColorStop(1, 'rgba(80, 0, 0, 0.5)');
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, portal.width/2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw swirl effect
+    ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(0, 0, 10 + i * 10, portal.rotation + i, portal.rotation + i + Math.PI);
+        ctx.stroke();
+    }
+
+    // Add spider web pattern inside portal
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    // Radial lines
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(angle) * portal.width/2.5, Math.sin(angle) * portal.width/2.5);
+        ctx.stroke();
+    }
+    // Circular web lines
+    for (let r = 8; r < portal.width/2.5; r += 8) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
 // === CEILING SPIKES ===
 function updateCeilingSpikes() {
     window.ceilingSpikes.forEach(spike => {

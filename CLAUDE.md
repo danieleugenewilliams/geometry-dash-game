@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Geometry Dash clone built as a homeschool educational project. Uses HTML5 Canvas, Vanilla JavaScript, and Node.js server for high score persistence. No external dependencies or build system.
+Geometry Dash clone built as a homeschool educational project. Uses HTML5 Canvas, Vanilla JavaScript, and Node.js server for high score persistence. No external dependencies or build system. This is the first full game that Orion (9) and Apollo (7) have developed. They are in homeschool and take a weekly class with their Dad (Daniel) called "Coding with Dad".
+
+## Learning and Pacing
+
+As Orion and Apollo work with you to develop new game features, I want you to explain the changes to help them understand the fundamentals of coding and software engineering.
 
 ## Commands
 

@@ -12,6 +12,7 @@ class Player {
         this.velocityY = 0;
         this.isJumping = false;
         this.rotation = 0;
+        this.gravityFlipped = false; // Spider mode: false = gravity pulls down
     }
     
     jump() {
@@ -108,6 +109,43 @@ class Player {
         this.height = GAME_CONFIG.PLAYER_SIZE;
         this.rotation = 0; // Drop any leftover flying tilt
     }
+
+    transformToSpider() {
+        this.width = 35;
+        this.height = 25;
+        this.gravityFlipped = false;
+    }
+
+    updateSpider() {
+        const gravity = this.gravityFlipped ? -GAME_CONFIG.SPIDER_GRAVITY : GAME_CONFIG.SPIDER_GRAVITY;
+        this.velocityY += gravity;
+        this.y += this.velocityY;
+
+        // Ground collision (walking on floor)
+        // The spider is shorter than the cube, so rest its own bottom edge on the
+        // floor instead of using the cube's GROUND_Y (which would float it 5px up)
+        const groundY = getCurrentGroundHeight() - this.height;
+        if (!this.gravityFlipped && this.y >= groundY) {
+            this.y = groundY;
+            this.velocityY = 0;
+            this.isJumping = false;
+        }
+
+        // Ceiling collision (walking on ceiling)
+        if (this.gravityFlipped && this.y <= GAME_CONFIG.CEILING_Y) {
+            this.y = GAME_CONFIG.CEILING_Y;
+            this.velocityY = 0;
+            this.isJumping = false;
+        }
+    }
+
+    flipGravity() {
+        if (!this.isJumping) {
+            this.gravityFlipped = !this.gravityFlipped;
+            this.velocityY = this.gravityFlipped ? -GAME_CONFIG.SPIDER_JUMP_FORCE : GAME_CONFIG.SPIDER_JUMP_FORCE;
+            this.isJumping = true;
+        }
+    }
     
     getBounds() {
         return {
@@ -131,6 +169,8 @@ class Player {
 function drawPlayer(ctx, player, gameState, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer) {
     if (gameState === GAME_STATES.FLYING) {
         drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer);
+    } else if (gameState === GAME_STATES.SPIDER_MODE) {
+        drawSpider(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer);
     } else {
         drawSquare(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer);
     }
@@ -269,7 +309,7 @@ function drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTime
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 2;
         ctx.globalAlpha = 1;
-        
+
         ctx.beginPath();
         ctx.moveTo(player.x + player.width, player.y + player.height/2);
         ctx.lineTo(player.x, player.y);
@@ -277,6 +317,103 @@ function drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTime
         ctx.closePath();
         ctx.stroke();
     }
-    
+
+    ctx.restore();
+}
+
+function drawSpider(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer) {
+    ctx.save();
+
+    // Add invincibility glow effects
+    if (isSuperInvincible) {
+        const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+        ctx.shadowColor = flashRate === 0 ? '#00FF00' : '#0000FF';
+        ctx.shadowBlur = 20;
+        if (flashRate === 0) {
+            ctx.globalAlpha = 0.9;
+        }
+    } else if (isInvincible) {
+        ctx.shadowColor = '#00FFFF';
+        ctx.shadowBlur = 15;
+        const flashRate = Math.floor(invincibilityTimer / 100) % 2;
+        if (flashRate === 0) {
+            ctx.globalAlpha = 0.8;
+        }
+    }
+
+    const centerX = player.x + player.width / 2;
+    const centerY = player.y + player.height / 2;
+    const flipped = player.gravityFlipped;
+
+    // Spider body (dark red/maroon ellipse)
+    ctx.fillStyle = '#8B0000';
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, player.width / 2.5, player.height / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spider head (smaller circle)
+    const headOffset = flipped ? player.height / 3 : -player.height / 3;
+    ctx.fillStyle = '#660000';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY + headOffset, player.width / 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spider eyes (two small red dots)
+    ctx.fillStyle = '#FF0000';
+    const eyeY = centerY + headOffset + (flipped ? 3 : -3);
+    ctx.beginPath();
+    ctx.arc(centerX - 4, eyeY, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX + 4, eyeY, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spider legs (8 legs, 4 on each side)
+    ctx.strokeStyle = '#4A0000';
+    ctx.lineWidth = 2;
+
+    const legAngles = [0.3, 0.6, 0.9, 1.2];
+    const legLength = 15;
+
+    // Animate legs
+    const legWiggle = Math.sin(Date.now() / 100) * 0.1;
+
+    for (let i = 0; i < legAngles.length; i++) {
+        const angle = legAngles[i] + legWiggle;
+        const yDir = flipped ? -1 : 1;
+
+        // Left legs
+        ctx.beginPath();
+        ctx.moveTo(centerX - 5, centerY);
+        ctx.lineTo(centerX - 5 - Math.cos(angle) * legLength, centerY + yDir * Math.sin(angle) * legLength);
+        ctx.stroke();
+
+        // Right legs
+        ctx.beginPath();
+        ctx.moveTo(centerX + 5, centerY);
+        ctx.lineTo(centerX + 5 + Math.cos(angle) * legLength, centerY + yDir * Math.sin(angle) * legLength);
+        ctx.stroke();
+    }
+
+    // Add invincibility outlines
+    if (isSuperInvincible) {
+        ctx.shadowBlur = 0;
+        const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
+        ctx.strokeStyle = flashRate === 0 ? '#00FF00' : '#0000FF';
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, player.width / 2.5, player.height / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    } else if (isInvincible) {
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#00FFFF';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, player.width / 2.5, player.height / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
     ctx.restore();
 }
