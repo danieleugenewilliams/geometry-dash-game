@@ -2,8 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const START_PORT = 3000;
-const MAX_PORT = 3010;
+const START_PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const MAX_PORT = START_PORT + 10;
 
 // Level validation schema (simplified for server-side)
 function validateLevel(levelData) {
