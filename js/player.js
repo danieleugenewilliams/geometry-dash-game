@@ -12,6 +12,7 @@ class Player {
         this.velocityY = 0;
         this.isJumping = false;
         this.rotation = 0;
+        this.gravityFlipped = false; // Spider mode: false = gravity pulls down
     }
     
     jump() {
@@ -121,7 +122,9 @@ class Player {
         this.y += this.velocityY;
 
         // Ground collision (walking on floor)
-        const groundY = getCurrentGroundY();
+        // The spider is shorter than the cube, so rest its own bottom edge on the
+        // floor instead of using the cube's GROUND_Y (which would float it 5px up)
+        const groundY = getCurrentGroundHeight() - this.height;
         if (!this.gravityFlipped && this.y >= groundY) {
             this.y = groundY;
             this.velocityY = 0;
