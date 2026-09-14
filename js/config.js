@@ -21,7 +21,11 @@ const GAME_CONFIG = {
     THRUST_FORCE: -0.5,
     AIR_RESISTANCE: 0.9,
     MAX_VERTICAL_SPEED: 8,
-    
+
+    // Player rotation (Geometry Dash style spin)
+    CUBE_SPIN_SPEED: 0.042, // radians per frame - about a quarter turn (90°) over one jump
+    JET_MAX_TILT: 25 * Math.PI / 180, // radians - ship nose tilts up to 25° with its vertical speed
+
     // Up-down mode constants
     TRANSITION_DURATION: 800, // milliseconds
     UP_DOWN_DURATION: 25000, // 25 seconds
