@@ -382,6 +382,7 @@ class GameController {
                 break;
             case GAME_STATES.GREEN_PORTAL_TRANSITION:
                 window.gameState = GAME_STATES.UP_DOWN_MODE;
+                this.player.rotation = 0; // Sit flat even if we jumped into the portal
                 break;
             case GAME_STATES.UP_DOWN_MODE:
                 window.upDownTimer += GAME_CONFIG.FRAME_TIME;
