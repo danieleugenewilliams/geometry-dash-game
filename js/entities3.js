@@ -137,6 +137,38 @@ function generatePortals() {
     }
 }
 
+function generateCeilingSpikes() {
+    // Only generate ceiling spikes in up-down mode or spider mode
+    if (window.gameState !== GAME_STATES.UP_DOWN_MODE && window.gameState !== GAME_STATES.SPIDER_MODE) {
+        return;
+    }
+
+    const ceilingSpikeSpawnChance = 0.006; // 0.6% chance per frame
+
+    if (Math.random() < ceilingSpikeSpawnChance) {
+        const spike = {
+            x: GAME_CONFIG.CANVAS_WIDTH + 20,
+            y: GAME_CONFIG.CEILING_Y,
+            width: 20,
+            height: 20,
+            type: 'ceiling_spike'
+        };
+
+        // Basic collision avoidance with existing ceiling spikes
+        let validPosition = true;
+        for (let existing of window.ceilingSpikes) {
+            if (Math.abs(spike.x - existing.x) < 60) {
+                validPosition = false;
+                break;
+            }
+        }
+
+        if (validPosition) {
+            window.ceilingSpikes.push(spike);
+        }
+    }
+}
+
 function generateGreenPortals() {
     const currentScore = Math.floor(window.score);
     const greenPortalsToSpawn = Math.floor(currentScore / (GAME_CONFIG.PORTAL_SPAWN_INTERVAL * 1.5)) - Math.floor(window.lastGreenPortalSpawnScore / (GAME_CONFIG.PORTAL_SPAWN_INTERVAL * 1.5));
@@ -304,6 +336,11 @@ function drawAllEntities(ctx) {
     window.greenPortals.forEach(portal => {
         drawGreenPortal(ctx, portal);
     });
+
+    // Draw red portals
+    window.redPortals.forEach(portal => {
+        drawRedPortal(ctx, portal);
+    });
     
     // Draw asteroids (flying mode)
     window.asteroids.forEach(asteroid => {
@@ -343,29 +380,36 @@ function updateAllEntities(gameState) {
     updateStairs();
     updatePortals();
     updateGreenPortals();
+    updateRedPortals();
     updateCeilingSpikes();
     updateOrangeOrbs();
     updateGreenOrbs();
     updateSparkles();
     updateBonusNotifications();
-    
+
     if (gameState === GAME_STATES.FLYING) {
         updateAsteroids();
         generateAsteroids();
     }
-    
+
     // Generate entities based on game mode
     if (window.gameMode === GAME_MODES.ENDLESS) {
         generateCoins(gameState);
         generateOrangeOrb();
         generateGreenOrb();
-        
-        // Generate obstacles and stairs in normal mode
-        if (gameState === GAME_STATES.NORMAL || gameState === GAME_STATES.UP_DOWN_MODE) {
+
+        // Generate obstacles and stairs in normal mode or spider mode
+        if (gameState === GAME_STATES.NORMAL || gameState === GAME_STATES.UP_DOWN_MODE || gameState === GAME_STATES.SPIDER_MODE) {
             generateObstacles();
             generateStairs();
             generatePortals();
             generateGreenPortals();
+            generateRedPortals();
+        }
+
+        // Generate ceiling spikes in up-down mode or spider mode
+        if (gameState === GAME_STATES.UP_DOWN_MODE || gameState === GAME_STATES.SPIDER_MODE) {
+            generateCeilingSpikes();
         }
     }
 }

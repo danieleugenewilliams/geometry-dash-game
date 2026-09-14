@@ -29,7 +29,12 @@ const GAME_CONFIG = {
     // Up-down mode constants
     TRANSITION_DURATION: 800, // milliseconds
     UP_DOWN_DURATION: 25000, // 25 seconds
-    
+
+    // Spider mode constants
+    SPIDER_DURATION: 20000, // 20 seconds
+    SPIDER_GRAVITY: 0.6,
+    SPIDER_JUMP_FORCE: 12,
+
     // Power-up constants
     INVINCIBILITY_DURATION: 10000, // 10 seconds
     SUPER_INVINCIBILITY_DURATION: 8000, // 8 seconds
@@ -62,7 +67,10 @@ const GAME_STATES = {
     PORTAL_EXIT: 'PORTAL_EXIT',
     GREEN_PORTAL_TRANSITION: 'GREEN_PORTAL_TRANSITION',
     UP_DOWN_MODE: 'UP_DOWN_MODE',
-    UP_DOWN_EXIT: 'UP_DOWN_EXIT'
+    UP_DOWN_EXIT: 'UP_DOWN_EXIT',
+    RED_PORTAL_TRANSITION: 'RED_PORTAL_TRANSITION',
+    SPIDER_MODE: 'SPIDER_MODE',
+    SPIDER_EXIT: 'SPIDER_EXIT'
 };
 
 const PLAYER_POSITIONS = {
