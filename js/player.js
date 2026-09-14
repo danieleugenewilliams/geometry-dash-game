@@ -33,6 +33,20 @@ class Player {
             this.velocityY = 0;
             this.isJumping = false;
         }
+
+        // Spin while in the air, land square on the ground (or a stair)
+        if (this.isJumping) {
+            this.rotation += GAME_CONFIG.CUBE_SPIN_SPEED;
+        } else {
+            this.snapRotation();
+        }
+    }
+
+    // Snap rotation to the nearest quarter turn (90°) so the cube sits flat
+    snapRotation() {
+        const quarterTurn = Math.PI / 2;
+        this.rotation = Math.round(this.rotation / quarterTurn) * quarterTurn;
+        this.rotation %= Math.PI * 2; // Keep the angle small after many spins
     }
     
     updateFlying(spaceKeyPressed) {
@@ -46,9 +60,13 @@ class Player {
         this.velocityY *= GAME_CONFIG.AIR_RESISTANCE;
         
         // Limit vertical speed
-        this.velocityY = Math.max(-GAME_CONFIG.MAX_VERTICAL_SPEED, 
+        this.velocityY = Math.max(-GAME_CONFIG.MAX_VERTICAL_SPEED,
                                  Math.min(GAME_CONFIG.MAX_VERTICAL_SPEED, this.velocityY));
-        
+
+        // Tilt the ship with its vertical speed (nose up when rising, down when falling)
+        const tilt = (this.velocityY / GAME_CONFIG.MAX_VERTICAL_SPEED) * GAME_CONFIG.JET_MAX_TILT;
+        this.rotation = Math.max(-GAME_CONFIG.JET_MAX_TILT, Math.min(GAME_CONFIG.JET_MAX_TILT, tilt));
+
         // Update position
         this.y += this.velocityY;
         
@@ -82,11 +100,13 @@ class Player {
         this.width = 40;
         this.height = 20;
         this.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center vertically
+        this.rotation = 0;
     }
-    
+
     transformToSquare() {
         this.width = GAME_CONFIG.PLAYER_SIZE;
         this.height = GAME_CONFIG.PLAYER_SIZE;
+        this.rotation = 0; // Drop any leftover flying tilt
     }
     
     getBounds() {
@@ -183,7 +203,12 @@ function drawSquare(ctx, player, isInvincible, isSuperInvincible, invincibilityT
 
 function drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer, spaceKeyPressed) {
     ctx.save();
-    
+
+    // Tilt the whole ship around its center (drawing only - the hitbox stays the same)
+    ctx.translate(player.getCenterX(), player.getCenterY());
+    ctx.rotate(player.rotation);
+    ctx.translate(-player.getCenterX(), -player.getCenterY());
+
     // Add invincibility glow effects
     if (isSuperInvincible) {
         // Green and blue flashing for super invincibility
