@@ -13,7 +13,7 @@ npm start          # Start server on http://localhost:3000
 node server.js     # Alternative start command
 ```
 
-No automated tests - testing is done manually by playing the game in browser. Check browser console (F12) for debug output.
+`npm test` parses every JS file and smoke-tests the server (`/api/levels`). Gameplay is still tested manually by playing the game in browser. Check browser console (F12) for debug output.
 
 ## Architecture
 
@@ -72,3 +72,7 @@ Levels defined as JSON in `levels/` directory following `levels/schema.json`. Ti
 - 1-4: Quick level select
 - E: Endless mode
 - ESC: Return to menu
+
+## Builder–reviewer loop
+
+See `docs/review-loop.md` for the contract (roles, labels, state table, merge predicate). A session named some variation of `builder` runs `/builder-watch`; one named `reviewer` runs `/reviewer-watch`. No session holds both roles.
