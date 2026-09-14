@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr list*, gh pr view*, gh pr diff*, gh pr comment*, gh pr edit*, gh pr merge*, gh issue list*, gh issue view*, gh api repos/danieleugenewilliams/geometry-dash-game/issues/*/timeline*, gh api repos/danieleugenewilliams/geometry-dash-game/compare/*, gh label*, git fetch*, git merge*, git rev-parse*, git log*, git show*, git diff*, git status*, git add*, git commit*, git push origin HEAD:*, jq*, comm*, printf*, sort*, grep*, sleep*, date*, npm*, node*), Monitor, TaskStop, Agent, PushNotification
+allowed-tools: Bash(gh pr list*), Bash(gh pr view*), Bash(gh pr diff*), Bash(gh pr comment*), Bash(gh pr edit*), Bash(gh pr merge*), Bash(gh issue list*), Bash(gh issue view*), Bash(gh api repos/danieleugenewilliams/geometry-dash-game/issues/*/timeline*), Bash(gh api repos/danieleugenewilliams/geometry-dash-game/compare/*), Bash(gh label*), Bash(git fetch*), Bash(git merge*), Bash(git rev-parse*), Bash(git log*), Bash(git show*), Bash(git diff*), Bash(git status*), Bash(git add*), Bash(git commit*), Bash(git push origin HEAD:*), Bash(jq*), Bash(comm*), Bash(printf*), Bash(sort*), Bash(grep*), Bash(sleep*), Bash(date*), Bash(npm*), Bash(node*), Monitor, TaskStop, Agent, PushNotification
 description: Watch the builder queue — place handed-back fixes, re-queue PRs whose base has moved, and act on what is mergeable after the checks. Usage: /builder-watch [poll-seconds] [max-active]
 ---
 
@@ -162,7 +162,7 @@ tick ago; the checks are against the PR as it is now:
 4. `behind_by` is 0 against `main`. If not, the tick was stale itself; the
    `stale` handler is the one to run.
 
-The **builder** merges, on `mergeable` and only after the checks below.
+The **builder** merges, on `mergeable` and only after the four checks above hold.
 
 Merge with `gh pr merge <n> --repo danieleugenewilliams/geometry-dash-game --merge`, never `--delete-branch` on a
 stack, never `--admin`. Say what landed, at which sha. Children the landing staled show up

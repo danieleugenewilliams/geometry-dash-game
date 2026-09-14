@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr list*, gh pr view*, gh pr diff*, gh pr comment*, gh pr edit*, gh api repos/danieleugenewilliams/geometry-dash-game/issues/*/timeline*, gh label*, git fetch*, git worktree*, git rev-parse*, git log*, git show*, git diff*, git status*, git add*, git commit*, git push origin HEAD:*, jq*, comm*, printf*, sort*, grep*, sleep*, date*, npm*, node*), Monitor, TaskStop, Agent, PushNotification
+allowed-tools: Bash(gh pr list*), Bash(gh pr view*), Bash(gh pr diff*), Bash(gh pr comment*), Bash(gh pr edit*), Bash(gh api repos/danieleugenewilliams/geometry-dash-game/issues/*/timeline*), Bash(gh label*), Bash(git fetch*), Bash(git worktree*), Bash(git rev-parse*), Bash(git log*), Bash(git show*), Bash(git diff*), Bash(git status*), Bash(git add*), Bash(git commit*), Bash(git push origin HEAD:*), Bash(jq*), Bash(comm*), Bash(printf*), Bash(sort*), Bash(grep*), Bash(sleep*), Bash(date*), Bash(npm*), Bash(node*), Monitor, TaskStop, Agent, PushNotification
 description: Watch the reviewer queue and review each PR that enters it. Usage: /reviewer-watch [poll-seconds] [max-active]
 ---
 
