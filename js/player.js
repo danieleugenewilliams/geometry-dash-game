@@ -102,6 +102,10 @@ class Player {
         this.height = 20;
         this.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center vertically
         this.rotation = 0;
+        // You always jump into a portal, so forget the jump speed - otherwise
+        // the ship shoots up (or dives) the moment flying mode starts
+        this.velocityY = 0;
+        this.isJumping = false;
     }
 
     transformToSquare() {
@@ -114,6 +118,10 @@ class Player {
         this.width = 35;
         this.height = 25;
         this.gravityFlipped = false;
+        // Forget the jump that carried us into the red portal, so the spider
+        // starts by falling to the floor instead of launching into the air
+        this.velocityY = 0;
+        this.isJumping = false;
     }
 
     updateSpider() {

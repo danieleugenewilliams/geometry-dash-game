@@ -75,9 +75,22 @@ class GameController {
             this.canvas.height = this.displayHeight * scale;
             this.ctx.scale(scale, scale);
             
-            // Reset player position if game has started
+            // Reset player position if game has started.
+            // Only snap to the floor in modes where the player actually stands on it -
+            // a jet in the sky or a cube on the ceiling must stay where it is.
             if (this.player && window.gameStarted) {
-                this.player.y = getCurrentGroundY();
+                if (window.gameState === GAME_STATES.NORMAL) {
+                    this.player.y = getCurrentGroundY();
+                } else if (window.gameState === GAME_STATES.UP_DOWN_MODE) {
+                    if (window.playerPosition === PLAYER_POSITIONS.GROUND) {
+                        this.player.y = getCurrentGroundY();
+                    } else if (window.playerPosition === PLAYER_POSITIONS.CEILING) {
+                        this.player.y = GAME_CONFIG.CEILING_Y;
+                    } else if (window.transitionTargetY !== GAME_CONFIG.CEILING_Y) {
+                        // Mid-flip towards the floor: aim at the new floor height
+                        window.transitionTargetY = getCurrentGroundY();
+                    }
+                }
                 console.log('Player repositioned to:', this.player.y);
             }
             
@@ -385,6 +398,9 @@ class GameController {
                     window.gameState = GAME_STATES.NORMAL;
                     this.player.transformToSquare();
                     this.player.y = getCurrentGroundY();
+                    // Land as a still cube - leftover flying speed would make it hop and spin
+                    this.player.velocityY = 0;
+                    this.player.isJumping = false;
                     window.asteroids = [];
                 }
                 break;
@@ -397,7 +413,14 @@ class GameController {
                 if (window.upDownTimer >= GAME_CONFIG.UP_DOWN_DURATION) {
                     window.gameState = GAME_STATES.NORMAL;
                     window.playerPosition = PLAYER_POSITIONS.GROUND;
+                    window.transitionTimer = 0;
                     this.player.y = getCurrentGroundY();
+                    // The jump that carried us into the green portal was frozen for 25s -
+                    // clear it so the cube doesn't do a phantom jump when the mode ends
+                    this.player.velocityY = 0;
+                    this.player.isJumping = false;
+                    this.player.rotation = 0;
+                    window.ceilingSpikes = []; // Ceiling spikes belong to this mode
                 }
                 break;
             case GAME_STATES.RED_PORTAL_TRANSITION:
@@ -412,6 +435,7 @@ class GameController {
                     this.player.y = getCurrentGroundY();
                     this.player.velocityY = 0;
                     this.player.isJumping = false;
+                    window.ceilingSpikes = []; // Ceiling spikes belong to this mode
                 }
                 break;
         }
