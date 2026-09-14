@@ -5,9 +5,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node test.js"
   },
-  "keywords": ["game", "geometry-dash", "html5"],
+  "keywords": [
+    "game",
+    "geometry-dash",
+    "html5"
+  ],
   "author": "",
   "license": "MIT"
 }
