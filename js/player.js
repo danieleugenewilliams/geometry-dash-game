@@ -174,6 +174,55 @@ class Player {
 }
 
 // Player drawing functions
+
+// Soft shadow on the surface under (or above) the player.
+// Drawn separately from the sprite so it sits under the obstacles too.
+// A shadow tells your eye how far something is from the ground: big and dark
+// means "touching", small and faint means "way up in the air".
+// floorY is the surface the shadow lands on in NORMAL/spider/up-down mode.
+function drawPlayerShadow(ctx, player, gameState, floorY) {
+    const playerTop = player.y;
+    const playerBottom = player.y + player.height;
+
+    // Pick the surface: the floor, or the ceiling if the player is closer to it
+    // (up-down mode on the ceiling, or the spider walking upside down)
+    let surfaceY = floorY;
+    let onCeiling = false;
+    const canUseCeiling = gameState === GAME_STATES.UP_DOWN_MODE ||
+                          gameState === GAME_STATES.SPIDER_MODE ||
+                          gameState === GAME_STATES.UP_DOWN_EXIT ||
+                          gameState === GAME_STATES.SPIDER_EXIT;
+    if (canUseCeiling) {
+        const distanceToFloor = floorY - playerBottom;
+        const distanceToCeiling = playerTop - GAME_CONFIG.CEILING_Y;
+        if (distanceToCeiling < distanceToFloor) {
+            surfaceY = GAME_CONFIG.CEILING_Y;
+            onCeiling = true;
+        }
+    }
+
+    // How high is the player above the surface? 0 = touching, 1 = far away
+    const gap = onCeiling ? (playerTop - surfaceY) : (surfaceY - playerBottom);
+    const height = Math.max(0, Math.min(1, gap / GAME_CONFIG.SHADOW_FADE_HEIGHT));
+
+    // Higher = smaller and fainter
+    const scale = 1 - (1 - GAME_CONFIG.SHADOW_MIN_SCALE) * height;
+    const alpha = GAME_CONFIG.SHADOW_MAX_ALPHA - (GAME_CONFIG.SHADOW_MAX_ALPHA - GAME_CONFIG.SHADOW_MIN_ALPHA) * height;
+
+    const radiusX = (player.width * GAME_CONFIG.SHADOW_WIDTH_SCALE / 2) * scale;
+    const radiusY = GAME_CONFIG.SHADOW_THICKNESS * scale;
+    // Nudge the shadow into the surface so a standing player's shadow peeks out
+    // around its feet instead of floating on the surface line
+    const centerY = onCeiling ? surfaceY + radiusY / 2 : surfaceY - radiusY / 2;
+
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(player.getCenterX(), centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 function drawPlayer(ctx, player, gameState, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer) {
     if (gameState === GAME_STATES.FLYING) {
         drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer);
@@ -186,14 +235,14 @@ function drawPlayer(ctx, player, gameState, isInvincible, isSuperInvincible, inv
 
 function drawSquare(ctx, player, isInvincible, isSuperInvincible, invincibilityTimer, superInvincibilityTimer) {
     ctx.save();
-    
+
     // Add invincibility glow effects
     if (isSuperInvincible) {
         // Green and blue flashing for super invincibility
         const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
         ctx.shadowColor = flashRate === 0 ? '#00FF00' : '#0000FF';
         ctx.shadowBlur = 20;
-        
+
         if (flashRate === 0) {
             ctx.globalAlpha = 0.9;
         }
@@ -201,51 +250,76 @@ function drawSquare(ctx, player, isInvincible, isSuperInvincible, invincibilityT
         // Orange orb invincibility effect
         ctx.shadowColor = '#00FFFF';
         ctx.shadowBlur = 15;
-        
+
         const flashRate = Math.floor(invincibilityTimer / 100) % 2;
         if (flashRate === 0) {
             ctx.globalAlpha = 0.8;
         }
     }
-    
-    // Apply rotation if in transition
-    if (player.rotation !== 0) {
-        ctx.translate(player.x + player.width/2, player.y + player.height/2);
-        ctx.rotate(player.rotation);
-        ctx.translate(-player.width/2, -player.height/2);
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(0, 0, player.width, player.height);
-    } else {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-    }
-    
+
+    // Spin the whole drawing around the cube's center (drawing only - the hitbox
+    // stays an upright square). With rotation 0 this is the same as drawing at (x, y).
+    // From here on, (0, 0) is the cube's top-left corner.
+    ctx.translate(player.x + player.width/2, player.y + player.height/2);
+    ctx.rotate(player.rotation);
+    ctx.translate(-player.width/2, -player.height/2);
+
+    const w = player.width;
+    const h = player.height;
+    const base = GAME_CONFIG.PLAYER_BASE_COLOR;
+    const light = lightenColor(base, GAME_CONFIG.SHADE_LIGHTEN);
+    const dark = darkenColor(base, GAME_CONFIG.SHADE_DARKEN);
+    const edge = Math.max(2, Math.round(w * GAME_CONFIG.SHADE_EDGE_SIZE));
+
+    // Face: a gradient from light (top-left, where the light is) to dark (bottom-right)
+    const faceGradient = ctx.createLinearGradient(0, 0, w, h);
+    faceGradient.addColorStop(0, lightenColor(base, GAME_CONFIG.SHADE_LIGHTEN / 2));
+    faceGradient.addColorStop(0.5, base);
+    faceGradient.addColorStop(1, darkenColor(base, GAME_CONFIG.SHADE_DARKEN / 2));
+    ctx.fillStyle = faceGradient;
+    ctx.fillRect(0, 0, w, h);
+
+    // Bevels: light strips on the top and left edges, dark strips on the bottom and right.
+    // These are what make a flat square look like a block with thickness.
+    ctx.shadowBlur = 0; // Only the main face casts the invincibility glow
+    ctx.fillStyle = light;
+    ctx.fillRect(0, 0, w, edge); // Top
+    ctx.fillRect(0, 0, edge, h); // Left
+    ctx.fillStyle = dark;
+    ctx.fillRect(0, h - edge, w, edge); // Bottom
+    ctx.fillRect(w - edge, 0, edge, h); // Right
+    // Corners where light and dark strips meet: cut them diagonally
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.moveTo(w - edge, 0); ctx.lineTo(w, 0); ctx.lineTo(w - edge, edge); ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, h - edge); ctx.lineTo(edge, h - edge); ctx.lineTo(0, h); ctx.closePath();
+    ctx.fill();
+
+    // Small highlight: a little bright spot near the top-left corner, like a shiny block
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillRect(edge + 2, edge + 2, Math.max(2, edge - 1), Math.max(2, edge - 1));
+
+    // Thin dark outline so the cube stands out from the background
+    ctx.strokeStyle = darkenColor(base, 0.7);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+
     // Add invincibility outlines
     if (isSuperInvincible) {
-        ctx.shadowBlur = 0;
         const flashRate = Math.floor(superInvincibilityTimer / 80) % 2;
         ctx.strokeStyle = flashRate === 0 ? '#00FF00' : '#0000FF';
         ctx.lineWidth = 3;
         ctx.globalAlpha = 1;
-        
-        if (player.rotation !== 0) {
-            ctx.strokeRect(0, 0, player.width, player.height);
-        } else {
-            ctx.strokeRect(player.x, player.y, player.width, player.height);
-        }
+        ctx.strokeRect(0, 0, w, h);
     } else if (isInvincible) {
-        ctx.shadowBlur = 0;
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 2;
         ctx.globalAlpha = 1;
-        
-        if (player.rotation !== 0) {
-            ctx.strokeRect(0, 0, player.width, player.height);
-        } else {
-            ctx.strokeRect(player.x, player.y, player.width, player.height);
-        }
+        ctx.strokeRect(0, 0, w, h);
     }
-    
+
     ctx.restore();
 }
 
@@ -278,14 +352,28 @@ function drawJet(ctx, player, isInvincible, isSuperInvincible, invincibilityTime
         }
     }
     
-    // Main body (triangle)
-    ctx.fillStyle = '#C0C0C0';
+    // Main body (triangle), lit from the top: lighter on top, darker underneath
+    const hullColor = '#C0C0C0';
+    const hullGradient = ctx.createLinearGradient(0, player.y, 0, player.y + player.height);
+    hullGradient.addColorStop(0, lightenColor(hullColor, GAME_CONFIG.SHADE_LIGHTEN / 2));
+    hullGradient.addColorStop(0.5, hullColor);
+    hullGradient.addColorStop(1, darkenColor(hullColor, GAME_CONFIG.SHADE_DARKEN));
+    ctx.fillStyle = hullGradient;
     ctx.beginPath();
     ctx.moveTo(player.x + player.width, player.y + player.height/2); // Point
     ctx.lineTo(player.x, player.y); // Top back
     ctx.lineTo(player.x, player.y + player.height); // Bottom back
     ctx.closePath();
     ctx.fill();
+
+    // Dark line along the underside of the hull (the side facing away from the light)
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = darkenColor(hullColor, GAME_CONFIG.SHADE_DARKEN);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + player.height);
+    ctx.lineTo(player.x + player.width, player.y + player.height/2);
+    ctx.stroke();
     
     // Exhaust flames
     ctx.fillStyle = spaceKeyPressed ? '#00BFFF' : '#4169E1';
@@ -353,11 +441,20 @@ function drawSpider(ctx, player, isInvincible, isSuperInvincible, invincibilityT
     const centerY = player.y + player.height / 2;
     const flipped = player.gravityFlipped;
 
-    // Spider body (dark red/maroon ellipse)
-    ctx.fillStyle = '#8B0000';
+    // Spider body (dark red/maroon ellipse), lit from the top-left so it looks round
+    const bodyColor = '#8B0000';
+    const bodyGradient = ctx.createRadialGradient(
+        centerX - player.width / 8, centerY - player.height / 5, 2,
+        centerX, centerY, player.width / 2.5
+    );
+    bodyGradient.addColorStop(0, lightenColor(bodyColor, GAME_CONFIG.SHADE_LIGHTEN));
+    bodyGradient.addColorStop(0.6, bodyColor);
+    bodyGradient.addColorStop(1, darkenColor(bodyColor, GAME_CONFIG.SHADE_DARKEN));
+    ctx.fillStyle = bodyGradient;
     ctx.beginPath();
     ctx.ellipse(centerX, centerY, player.width / 2.5, player.height / 2, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0; // Only the body casts the invincibility glow
 
     // Spider head (smaller circle)
     const headOffset = flipped ? player.height / 3 : -player.height / 3;

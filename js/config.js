@@ -41,6 +41,20 @@ const GAME_CONFIG = {
     ORB_SPAWN_INTERVAL: 100, // Every 100 points
     GREEN_ORB_SPAWN_INTERVAL: 1000, // Every 1000 points
     
+    // Depth and shading (drawing only - none of these change a hitbox)
+    PLAYER_BASE_COLOR: '#0000FF', // The cube's blue, written as a hex code so we can do color math on it
+    SHADE_LIGHTEN: 0.45, // How much lighter the lit (top-left) side is: 0 = same, 1 = white
+    SHADE_DARKEN: 0.45, // How much darker the shaded (bottom-right) side is: 0 = same, 1 = black
+    SHADE_EDGE_SIZE: 0.15, // Bevel thickness as a fraction of the sprite size
+    SHADOW_MAX_ALPHA: 0.35, // Shadow darkness when the player is standing on the ground
+    SHADOW_MIN_ALPHA: 0.06, // Shadow darkness when the player is as high as it gets
+    SHADOW_WIDTH_SCALE: 1.1, // Shadow width = player width x this, when on the ground
+    SHADOW_MIN_SCALE: 0.4, // Shadow never shrinks smaller than this fraction of full size
+    SHADOW_THICKNESS: 4, // Half-height of the shadow ellipse in pixels
+    SHADOW_FADE_HEIGHT: 160, // Pixels above the surface at which the shadow is fully shrunk and faded
+    GROUND_TILE_SIZE: 40, // Ground grid spacing in pixels (the grid scrolls at MOVE_SPEED)
+    GROUND_EDGE_HEIGHT: 3, // Thickness of the lit top edge of the ground
+
     // Auto replay
     AUTO_REPLAY_DELAY: 1000, // 1 second delay before auto restart
     
@@ -57,6 +71,34 @@ function getCurrentGroundHeight() {
 // Helper function to get current ground Y (where player sits)
 function getCurrentGroundY() {
     return window.GROUND_Y || (GAME_CONFIG.GROUND_HEIGHT - GAME_CONFIG.PLAYER_SIZE);
+}
+
+// Color helpers for shading.
+// A color is made of red, green and blue numbers from 0 to 255 (e.g. '#0000FF' is blue).
+// Lightening mixes each number toward 255 (white); darkening mixes it toward 0 (black).
+function parseHexColor(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) {
+        h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; // '#F00' -> 'FF0000'
+    }
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function toHexColor(r, g, b) {
+    const two = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+    return '#' + two(r) + two(g) + two(b);
+}
+
+// amount from 0 (no change) to 1 (pure white)
+function lightenColor(hex, amount) {
+    const [r, g, b] = parseHexColor(hex);
+    return toHexColor(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount);
+}
+
+// amount from 0 (no change) to 1 (pure black)
+function darkenColor(hex, amount) {
+    const [r, g, b] = parseHexColor(hex);
+    return toHexColor(r * (1 - amount), g * (1 - amount), b * (1 - amount));
 }
 
 // Game state enums
