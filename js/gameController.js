@@ -58,6 +58,9 @@ class GameController {
             // Update global ground values
             window.GROUND_HEIGHT = this.groundHeight;
             window.GROUND_Y = this.groundHeight - GAME_CONFIG.PLAYER_SIZE;
+
+            // The ground gradient depends on these sizes, so build a fresh one next draw
+            this.groundGradient = null;
             
             console.log('Ground calc:', {
                 displayHeight: this.displayHeight,
@@ -110,6 +113,9 @@ class GameController {
         window.upDownTimer = 0;
         window.spaceKeyPressed = false;
         window.animationFrame = 0;
+
+        // How far the ground grid has scrolled (drawing only, wraps every tile)
+        this.groundScroll = 0;
         
         // Up-down mode variables
         window.playerPosition = PLAYER_POSITIONS.GROUND;
@@ -375,6 +381,10 @@ class GameController {
         
         // Update entities
         updateAllEntities(window.gameState);
+
+        // Scroll the ground grid at the same speed as the obstacles so the
+        // floor looks like it is moving under the player
+        this.groundScroll = (this.groundScroll + GAME_CONFIG.MOVE_SPEED) % GAME_CONFIG.GROUND_TILE_SIZE;
         
         // Update level manager
         this.levelManager.update(GAME_CONFIG.FRAME_TIME, window.gameState);
@@ -788,6 +798,12 @@ class GameController {
             // Draw floor/ground with pattern
             this.drawFloor();
         }
+
+        // Draw the player's shadow on the floor (or ceiling), under everything else.
+        // No floor is drawn in flying mode (the ship is in space), so no shadow there.
+        if (window.gameState !== GAME_STATES.FLYING && window.gameState !== GAME_STATES.PORTAL_TRANSITION) {
+            drawPlayerShadow(this.ctx, this.player, window.gameState, this.groundHeight);
+        }
         
         // Draw all entities
         drawAllEntities(this.ctx);
@@ -802,21 +818,49 @@ class GameController {
     }
     
     drawFloor() {
-        // Draw main ground
-        this.ctx.fillStyle = '#8B4513';
-        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, this.displayHeight - this.groundHeight);
-        
-        // Draw grass line on top of ground
-        this.ctx.fillStyle = '#228B22';
-        this.ctx.fillRect(0, this.groundHeight, this.displayWidth, 3);
-        
-        // Draw ground texture pattern
-        this.ctx.fillStyle = '#654321';
-        for (let x = 0; x < this.displayWidth; x += 40) {
-            for (let y = this.groundHeight + 10; y < this.displayHeight; y += 20) {
-                this.ctx.fillRect(x + 5, y, 30, 2);
-            }
+        const groundTop = this.groundHeight;
+        const groundBottom = this.displayHeight;
+        const groundColor = '#8B4513';
+        const grassColor = '#228B22';
+        const tile = GAME_CONFIG.GROUND_TILE_SIZE;
+
+        // Main ground: a gradient that gets darker the deeper you go, so the
+        // top of the ground looks lit and the bottom looks like it is far below.
+        // Built once and reused every frame (rebuilt only when the canvas resizes).
+        if (!this.groundGradient) {
+            this.groundGradient = this.ctx.createLinearGradient(0, groundTop, 0, groundBottom);
+            this.groundGradient.addColorStop(0, groundColor);
+            this.groundGradient.addColorStop(1, darkenColor(groundColor, GAME_CONFIG.SHADE_DARKEN));
         }
+        this.ctx.fillStyle = this.groundGradient;
+        this.ctx.fillRect(0, groundTop, this.displayWidth, groundBottom - groundTop);
+
+        // Grid texture that scrolls left with the level: thin vertical lines every
+        // tile, plus horizontal lines, so the ground reads as blocks rushing past
+        this.ctx.strokeStyle = darkenColor(groundColor, GAME_CONFIG.SHADE_DARKEN / 2);
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        for (let x = -this.groundScroll; x < this.displayWidth; x += tile) {
+            const lineX = Math.round(x) + 0.5; // +0.5 keeps 1px lines crisp
+            this.ctx.moveTo(lineX, groundTop);
+            this.ctx.lineTo(lineX, groundBottom);
+        }
+        for (let y = groundTop + tile / 2; y < groundBottom; y += tile / 2) {
+            const lineY = Math.round(y) + 0.5;
+            this.ctx.moveTo(0, lineY);
+            this.ctx.lineTo(this.displayWidth, lineY);
+        }
+        this.ctx.stroke();
+
+        // Grass line on top of the ground, with a lighter lit edge above it.
+        // The bright edge is where the light from above hits the ground first.
+        this.ctx.fillStyle = grassColor;
+        this.ctx.fillRect(0, groundTop, this.displayWidth, GAME_CONFIG.GROUND_EDGE_HEIGHT + 2);
+        this.ctx.fillStyle = lightenColor(grassColor, GAME_CONFIG.SHADE_LIGHTEN);
+        this.ctx.fillRect(0, groundTop, this.displayWidth, GAME_CONFIG.GROUND_EDGE_HEIGHT);
+        // A dark line just under the grass so the edge looks raised
+        this.ctx.fillStyle = darkenColor(grassColor, GAME_CONFIG.SHADE_DARKEN);
+        this.ctx.fillRect(0, groundTop + GAME_CONFIG.GROUND_EDGE_HEIGHT + 2, this.displayWidth, 1);
     }
     
     drawUI() {
